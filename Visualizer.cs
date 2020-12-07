@@ -9,9 +9,9 @@
 
     public class Visualizer
     {
-        public void Visualize(DataHolder data)
+        public void VisualizeRelationship(DataHolder data, string output)
         {
-            var t = File.ReadAllText("template.dot");
+            var t = File.ReadAllText("relationship.dot");
             var clusterSb = new StringBuilder();
             foreach (var dc in data.Slots)
             {
@@ -31,12 +31,38 @@
                 linkSb.AppendLine($"cluster_{link.From} -> cluster_{link.To} [label =\"{link.Bandwidth}\", len = 3];");
             }
 
-            var output = t
+            var outputText = t
                 .Replace("{{CLUSTERS}}", Indent(clusterSb.ToString()))
                 .Replace("{{CONNECTION}}", Indent(linkSb.ToString()));
 
-            File.WriteAllText("output.dot", output);
-            Process.Start("dot", " -Tpng output.dot -o output.png");
+            File.WriteAllText("temp.dot", outputText);
+            Process.Start("dot", $" -Tpng temp.dot -o {output}");
+        }
+
+        public void VisualizeTask(DataHolder data, string output)
+        {
+            var t = File.ReadAllText("taskdag.dot");
+            var clusterSb = new StringBuilder();
+            foreach (var job in data.Jobs)
+            {
+                clusterSb.AppendLine($"{job.Name} [shape = {GraphShape.square}];");
+            }
+
+            var jobSb = new StringBuilder();
+            foreach (var job in data.Jobs)
+            {
+                foreach (var dep in job.Dependences)
+                {
+                    jobSb.AppendLine($"{dep.Depend} -> {job.Name} [label =\"{dep.Size}\", len = 3];");
+                }
+            }
+
+            var outputText = t
+                .Replace("{{CLUSTERS}}", Indent(clusterSb.ToString()))
+                .Replace("{{CONNECTION}}", Indent(jobSb.ToString()));
+
+            File.WriteAllText("temp.dot", outputText);
+            Process.Start("dot", $" -Tpng temp.dot -o {output}");
         }
 
         private string Cluster(string name, GraphNode[] nodes)
@@ -79,6 +105,7 @@ subgraph cluster_{{NAME}} {
             None,
             Mdiamond,
             box,
+            square,
             circle,
             note,
             cylinder,

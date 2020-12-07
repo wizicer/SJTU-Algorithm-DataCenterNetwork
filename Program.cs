@@ -11,7 +11,8 @@
             //var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ToyData"));
             dh.Init();
             var vis = new Visualizer();
-            vis.Visualize(dh);
+            vis.VisualizeRelationship(dh, "datacenters.png");
+            vis.VisualizeTask(dh, "task.png");
         }
     }
 }

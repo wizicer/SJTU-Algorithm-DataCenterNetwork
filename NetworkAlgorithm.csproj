@@ -10,7 +10,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="template.dot">
+    <None Update="taskdag.dot">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="relationship.dot">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="SimpleData\DataCenterPartitions.csv">

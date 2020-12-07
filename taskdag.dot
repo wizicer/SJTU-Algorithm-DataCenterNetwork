@@ -1,0 +1,31 @@
+﻿digraph G {
+  //graph settings
+  graph [
+    charset = "UTF-8";
+    labelloc = "t",
+    labeljust = "c",
+    bgcolor = "#ffffff",
+    fontcolor = black,
+    fontsize = 12,
+    style = "filled",
+    rankdir = LR,
+    margin = 0.1,
+    nodesep = 0.5,
+    ranksep = 0.8,
+    compound = true
+    layout = dot
+  ];
+  // node common settings
+  node [
+    fontsize = 9,
+    margin = 0.01,
+    style = "solid,filled"
+    shape = cylinder,
+  ];
+
+{{CLUSTERS}}
+
+{{CONNECTION}}
+
+
+}
