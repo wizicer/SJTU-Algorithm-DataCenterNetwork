@@ -28,7 +28,7 @@
             foreach (var link in data.Links)
             {
                 if (link.From == link.To) continue;
-                linkSb.AppendLine($"cluster_{link.From} -> cluster_{link.To} [label =\"{link.Bandwidth}\"];");
+                linkSb.AppendLine($"cluster_{link.From} -> cluster_{link.To} [label =\"{link.Bandwidth}\", len = 3];");
             }
 
             var output = t

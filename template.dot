@@ -18,7 +18,7 @@
   // node common settings
   node [
     fontsize = 9,
-    margin = 0.05,
+    margin = 0.01,
     style = "solid,filled"
   ];
 

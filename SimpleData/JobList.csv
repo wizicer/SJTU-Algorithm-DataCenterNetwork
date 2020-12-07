@@ -1,0 +1,5 @@
+﻿Job,SubJob,A1,A2,B1,B2,Time,Precedence Constraint
+A,tA1,100,200,,,1,{}
+,tA2,100,200,,,1,
+B,tB1,,,200,200,1,{}
+,tB2,,,200,300,1,

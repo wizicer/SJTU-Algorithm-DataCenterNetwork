@@ -7,7 +7,8 @@
     {
         static void Main(string[] args)
         {
-            var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ToyData"));
+            var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SimpleData"));
+            //var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ToyData"));
             dh.Init();
             var vis = new Visualizer();
             vis.Visualize(dh);
