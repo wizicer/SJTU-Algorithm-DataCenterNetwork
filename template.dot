@@ -1,20 +1,19 @@
-﻿digraph network {
+﻿digraph G {
   //graph settings
   graph [
     charset = "UTF-8";
-    /* label = "node simple", */
     labelloc = "t",
     labeljust = "c",
     bgcolor = "#ffffff",
     fontcolor = black,
     fontsize = 12,
     style = "filled",
-    rankdir = TB,
+    rankdir = LR,
     margin = 0.1,
     nodesep = 0.5,
     ranksep = 0.8,
     compound = true
-    layout = osage
+    layout = fdp
   ];
   // node common settings
   node [

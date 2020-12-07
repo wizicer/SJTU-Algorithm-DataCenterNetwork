@@ -12,7 +12,7 @@
         public void Visualize(DataHolder data)
         {
             var t = File.ReadAllText("template.dot");
-            var clustersb = new StringBuilder();
+            var clusterSb = new StringBuilder();
             foreach (var dc in data.Slots)
             {
                 var nodes = new List<GraphNode>();
@@ -21,12 +21,19 @@
                 nodes.AddRange(data.Partitions
                     .Where(_ => _.DataCenter == dc.DataCenter)
                     .Select(_ => new GraphNode { Label = _.Partition, Name = _.Partition, Shape = GraphShape.cylinder }));
-                clustersb.AppendLine(Indent(Cluster(dc.DataCenter, nodes.ToArray())));
+                clusterSb.AppendLine(Cluster(dc.DataCenter, nodes.ToArray()));
+            }
+
+            var linkSb = new StringBuilder();
+            foreach (var link in data.Links)
+            {
+                if (link.From == link.To) continue;
+                linkSb.AppendLine($"cluster_{link.From} -> cluster_{link.To} [label =\"{link.Bandwidth}\"];");
             }
 
             var output = t
-                .Replace("{{CLUSTERS}}", clustersb.ToString())
-                .Replace("{{CONNECTION}}", "");
+                .Replace("{{CLUSTERS}}", Indent(clusterSb.ToString()))
+                .Replace("{{CONNECTION}}", Indent(linkSb.ToString()));
 
             File.WriteAllText("output.dot", output);
             Process.Start("dot", " -Tpng output.dot -o output.png");
