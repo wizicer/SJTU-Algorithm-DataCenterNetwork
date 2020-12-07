@@ -160,6 +160,40 @@
             {
                 return new DataCenter(dc);
             }
+
+            public override string ToString()
+            {
+                return Value;
+            }
+
+            public bool Equals(DataCenter other)
+            {
+                if (ReferenceEquals(other, null))
+                    return false;
+                if (ReferenceEquals(other, this))
+                    return true;
+                return Value == other.Value;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return Equals(obj as DataCenter);
+            }
+
+            public override int GetHashCode()
+            {
+                return Value.GetHashCode();
+            }
+
+            public static bool operator ==(DataCenter left, DataCenter right)
+            {
+                return Equals(left, right);
+            }
+
+            public static bool operator !=(DataCenter left, DataCenter right)
+            {
+                return !(left == right);
+            }
         }
     }
 }

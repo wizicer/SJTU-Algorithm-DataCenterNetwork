@@ -10,6 +10,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="template.dot">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="ToyData\DataCenterPartitions.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
