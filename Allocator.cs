@@ -12,10 +12,10 @@
         {
         }
 
-        public void Allocate(DataHolder data)
+        public JobExecutionInfoCollection[] Allocate(DataHolder data)
         {
             var ps = data.Partitions.ToDictionary(_ => _.Partition, _ => _.DataCenter);
-            var slots = data.Slots.SelectMany(_ => Enumerable.Range(0, _.Slot).Select(o => (_.DataCenter, new int[] { }))).ToArray();
+            var slots = data.Slots.SelectMany(_ => Enumerable.Range(0, _.Slot).Select(o => (_.DataCenter, o, new int[] { }))).ToArray();
             var links = data.Links.ToDictionary(_ => (_.From, _.To), _ => _.Bandwidth);
 
             var jobs = data.Jobs.ToArray();
@@ -41,11 +41,13 @@
             {
                 Console.WriteLine(item.ToString());
             }
+
+            return list.ToArray();
         }
 
         private void dfs(
             IReadOnlyDictionary<string, DataCenter> ps,
-            (DataCenter location, int[] occupations)[] slots,
+            (DataCenter location, int number, int[] occupations)[] slots,
             IReadOnlyDictionary<(DataCenter From, DataCenter To), int> links,
             JobInfo[] jobs,
             JobExecutionInfoCollection jobExecutions,
@@ -86,7 +88,7 @@
                         slots.Where(_ => _ != slot).ToArray(),
                         links,
                         jobs.Where(_ => _ != job).ToArray(),
-                        jobExecutions + new JobExecutionInfo { Name = job.Name, Location = slot.location, DurationInMs = job.DurationInMs, Job = job },
+                        jobExecutions + new JobExecutionInfo { Name = job.Name, Location = slot.location, DurationInMs = job.DurationInMs, Slot = slot.number, Job = job },
                         callbackFound);
                 }
             }
@@ -94,9 +96,10 @@
 
         public class JobExecutionInfoCollection : IReadOnlyCollection<JobExecutionInfo>
         {
-            private readonly DataHolder data;
-            private readonly JobExecutionInfo[] jobs;
-            private JobExecutionInfo[] allJobs;
+            internal readonly DataHolder data;
+            internal readonly JobExecutionInfo[] jobs;
+            internal JobExecutionInfo[] linkJobs;
+            internal JobExecutionInfo[] allJobs;
 
             public JobExecutionInfoCollection(DataHolder data)
                 : this(data, new JobExecutionInfo[] { })
@@ -142,8 +145,17 @@
                                 .FirstOrDefault();
                             var start = exist == null ? avail : exist.StartInMs + exist.DurationInMs;
                             var duration = (int)Math.Ceiling(dep.Size * 1000d / link.Bandwidth);
-                            linkJobs.Add(new JobExecutionInfo { Name = flow, DurationInMs = duration, StartInMs = start, });
-                            depFinishTime = start + duration;
+                            linkJobs.Add(new JobExecutionInfo
+                            {
+                                Name = flow,
+                                DurationInMs = duration,
+                                StartInMs = start,
+                                ForJobName = dep.Depend,
+                                From = from,
+                                To = to,
+                            });
+                            var thisDepFinishTime = start + duration;
+                            if (depFinishTime < thisDepFinishTime) depFinishTime = thisDepFinishTime;
                         }
                     }
 
@@ -153,12 +165,14 @@
                         Name = job.Name,
                         DurationInMs = job.DurationInMs,
                         Location = job.Location,
+                        Slot = job.Slot,
                         StartInMs = depFinishTime,
                     });
 
                     ps.Add(job.Name, new { dc = job.Location, avail = depFinishTime + job.DurationInMs });
                 }
 
+                this.linkJobs = linkJobs.ToArray();
                 this.allJobs = workJobs
                     .Concat(linkJobs)
                     .ToArray();
@@ -185,7 +199,13 @@
             public int StartInMs { get; set; }
             public int DurationInMs { get; set; }
             public DataCenter Location { get; set; }
+            public int Slot { get; set; }
+
             public JobInfo Job { get; set; }
+
+            public string ForJobName { get; init; }
+            public DataCenter From { get; init; }
+            public DataCenter To { get; init; }
         }
     }
 }

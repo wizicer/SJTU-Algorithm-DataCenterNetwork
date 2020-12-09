@@ -6,6 +6,7 @@
     using System.IO;
     using System.Linq;
     using System.Text;
+    using static NetworkAlgorithm.Allocator;
 
     public class Visualizer
     {
@@ -80,6 +81,69 @@ subgraph cluster_{{NAME}} {
             return template
                 .Replace("{{NAME}}", name)
                 .Replace("{{NODES}}", Indent(string.Join(Environment.NewLine, nodes.Select(_ => _.ToString())), 2));
+        }
+
+        public void VisualizeTiming(JobExecutionInfoCollection col, string output)
+        {
+            var t = @"@startuml
+scale 1000 as 100 pixels
+{{DEFINITIONS}}
+
+{{TIMINGS}}
+@enduml";
+            var definitionSb = new StringBuilder();
+            var deflist = new List<(string display, string name, string group)>();
+            foreach (var link in col.linkJobs)
+            {
+                deflist.Add(($"{link.Name}", $"{simplifyLink(link.Name)}", link.To));
+            }
+            foreach (var slot in col.data.Slots)
+            {
+                for (int i = 0; i < slot.Slot; i++)
+                {
+                    var ps = string.Join(",", col.data.Partitions.Where(_ => _.DataCenter == slot.DataCenter).Select(_ => _.Partition));
+                    deflist.Add(($"{slot.DataCenter} Slot{i} (With {ps})", $"{slot.DataCenter}_{i}", slot.DataCenter));
+                }
+            }
+            foreach (var group in deflist.GroupBy(_ => _.group))
+            {
+                foreach (var def in group)
+                {
+                    definitionSb.AppendLine($"concise \"{def.display}\" as {def.name}");
+                }
+            }
+
+            var timimgSb = new StringBuilder();
+            foreach (var group in col.allJobs.GroupBy(_ => _.Job == null ? simplifyLink(_.Name) : $"{_.Location}_{_.Slot}"))
+            {
+                timimgSb.AppendLine($"@{group.Key}");
+
+                var lastTime = 0;
+                var lastDuration = 0;
+                foreach (var job in group.OrderBy(_ => _.StartInMs))
+                {
+                    var offset = job.Job == null ? job.StartInMs : job.StartInMs - lastTime;
+                    if (lastTime == 0 && offset > 0) timimgSb.AppendLine($"0 is {{-}}");
+
+                    timimgSb.AppendLine($"{(offset == 0 ? "0" : $"+{ offset}") } is {(job.Job == null ? $"transfer_{job.ForJobName}" : job.Name)}");
+
+                    lastTime = job.StartInMs + job.DurationInMs;
+                    lastDuration = job.DurationInMs;
+                }
+
+                if (lastDuration > 0) timimgSb.AppendLine($"+{lastDuration} is {{-}}");
+
+                timimgSb.AppendLine();
+            }
+
+            string simplifyLink(string name) => name.Replace(" -> ", "_");
+
+            var outputText = t
+                .Replace("{{DEFINITIONS}}", definitionSb.ToString())
+                .Replace("{{TIMINGS}}", timimgSb.ToString());
+
+            File.WriteAllText("temp.uml", outputText);
+            //Process.Start("java", $" -jar plantuml.jar temp.uml");
         }
 
         private string Indent(string input, int indent = 2)
