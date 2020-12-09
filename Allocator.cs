@@ -1,6 +1,7 @@
 ﻿namespace NetworkAlgorithm
 {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Linq;
     using static NetworkAlgorithm.DataHolder;
@@ -19,7 +20,7 @@
 
             var jobs = data.Jobs.ToArray();
 
-            dfs(ps, slots, links, jobs, new JobExecutionInfo[] { }, _ => Console.WriteLine(_.ToString()));
+            dfs(ps, slots, links, jobs, new JobExecutionInfoCollection(), _ => Console.WriteLine(_.ToString()));
         }
 
         private void dfs(
@@ -27,8 +28,8 @@
             (DataCenter location, int[] occupations)[] slots,
             IReadOnlyDictionary<(DataCenter From, DataCenter To), int> links,
             JobInfo[] jobs,
-            JobExecutionInfo[] jobExecutions,
-            Action<JobExecutionInfo[]> callbackFound)
+            JobExecutionInfoCollection jobExecutions,
+            Action<JobExecutionInfoCollection> callbackFound)
         {
             if (!jobs.Any())
             {
@@ -38,7 +39,7 @@
 
             foreach (var job in jobs)
             {
-                foreach (var slot in slots)
+                foreach (var slot in slots.GroupBy(_ => _.location).Select(_ => _.First()))
                 {
                     var flagFeasible = true;
 
@@ -65,9 +66,40 @@
                         slots.Where(_ => _ != slot).ToArray(),
                         links,
                         jobs.Where(_ => _ != job).ToArray(),
-                        jobExecutions.Concat(new[] { new JobExecutionInfo { Name = job.Name, Location = slot.location } }).ToArray(),
+                        jobExecutions + new JobExecutionInfo { Name = job.Name, Location = slot.location },
                         callbackFound);
                 }
+            }
+        }
+
+        public class JobExecutionInfoCollection : IReadOnlyCollection<JobExecutionInfo>
+        {
+            private readonly JobExecutionInfo[] jobs;
+
+            public JobExecutionInfoCollection()
+                : this(new JobExecutionInfo[] { })
+            {
+            }
+
+            public JobExecutionInfoCollection(JobExecutionInfo[] jobs)
+            {
+                this.jobs = jobs;
+            }
+
+            public int Count => jobs.Length;
+
+            public IEnumerator<JobExecutionInfo> GetEnumerator() => (IEnumerator<JobExecutionInfo>)jobs.GetEnumerator();
+
+            IEnumerator IEnumerable.GetEnumerator() => jobs.GetEnumerator();
+
+            public static JobExecutionInfoCollection operator +(JobExecutionInfoCollection collection, JobExecutionInfo job)
+            {
+                return new JobExecutionInfoCollection(collection.jobs.Concat(new[] { job }).ToArray());
+            }
+
+            public override string ToString()
+            {
+                return string.Join(", ", jobs.Select(_ => $"{_.Name}[{_.Location}]"));
             }
         }
 
