@@ -88,7 +88,7 @@
                         slots.Where(_ => _ != slot).ToArray(),
                         links,
                         jobs.Where(_ => _ != job).ToArray(),
-                        jobExecutions + new JobExecutionInfo { Name = job.Name, Location = slot.location, DurationInMs = job.DurationInMs, Slot = slot.number, Job = job },
+                        jobExecutions + new WorkJobExecutionInfo { Name = job.Name, Location = slot.location, DurationInMs = job.DurationInMs, Slot = slot.number, Job = job },
                         callbackFound);
                 }
             }
@@ -97,16 +97,16 @@
         public class JobExecutionInfoCollection : IReadOnlyCollection<JobExecutionInfo>
         {
             internal readonly DataHolder data;
-            internal readonly JobExecutionInfo[] jobs;
-            internal JobExecutionInfo[] linkJobs;
+            internal readonly WorkJobExecutionInfo[] jobs;
+            internal LinkJobExecutionInfo[] linkJobs;
             internal JobExecutionInfo[] allJobs;
 
             public JobExecutionInfoCollection(DataHolder data)
-                : this(data, new JobExecutionInfo[] { })
+                : this(data, new WorkJobExecutionInfo[] { })
             {
             }
 
-            public JobExecutionInfoCollection(DataHolder data, JobExecutionInfo[] jobs)
+            public JobExecutionInfoCollection(DataHolder data, WorkJobExecutionInfo[] jobs)
             {
                 this.data = data;
                 this.jobs = jobs;
@@ -118,7 +118,7 @@
 
             IEnumerator IEnumerable.GetEnumerator() => jobs.GetEnumerator();
 
-            public static JobExecutionInfoCollection operator +(JobExecutionInfoCollection collection, JobExecutionInfo job)
+            public static JobExecutionInfoCollection operator +(JobExecutionInfoCollection collection, WorkJobExecutionInfo job)
             {
                 return new JobExecutionInfoCollection(collection.data, collection.jobs.Concat(new[] { job }).ToArray());
             }
@@ -126,8 +126,8 @@
             internal void Calculate()
             {
                 var ps = data.Partitions.ToDictionary(_ => _.Partition, _ => new { dc = _.DataCenter, avail = 0 });
-                var linkJobs = new List<JobExecutionInfo>();
-                var workJobs = new List<JobExecutionInfo>();
+                var linkJobs = new List<LinkJobExecutionInfo>();
+                var workJobs = new List<WorkJobExecutionInfo>();
                 foreach (var job in jobs)
                 {
                     var depFinishTime = 0;
@@ -145,7 +145,7 @@
                                 .FirstOrDefault();
                             var start = exist == null ? avail : exist.StartInMs + exist.DurationInMs;
                             var duration = (int)Math.Ceiling(dep.Size * 1000d / link.Bandwidth);
-                            linkJobs.Add(new JobExecutionInfo
+                            linkJobs.Add(new LinkJobExecutionInfo
                             {
                                 Name = flow,
                                 DurationInMs = duration,
@@ -159,7 +159,7 @@
                         }
                     }
 
-                    workJobs.Add(new JobExecutionInfo
+                    workJobs.Add(new WorkJobExecutionInfo
                     {
                         Job = job.Job,
                         Name = job.Name,
@@ -174,6 +174,7 @@
 
                 this.linkJobs = linkJobs.ToArray();
                 this.allJobs = workJobs
+                    .OfType<JobExecutionInfo>()
                     .Concat(linkJobs)
                     .ToArray();
             }
@@ -187,9 +188,16 @@
             {
                 var strJobs = allJobs
                     .OrderBy(_ => _.StartInMs)
-                    .Select(_ => (_.Job == null ? $"{_.Name}" : $"{_.Name}[{_.Location}]") + $" ({_.StartInMs}, {_.DurationInMs})")
+                    .Select(_ => getName(_)
+                        + $" ({_.StartInMs}, {_.DurationInMs})")
                     ;
                 return $"{Time}: " + string.Join(", ", strJobs);
+
+                static string getName(JobExecutionInfo _)
+                    => _ is LinkJobExecutionInfo lj ? $"{lj.Name}"
+                    : _ is WorkJobExecutionInfo wj ? $"{wj.Name}[{wj.Location}]"
+                    : throw new Exception("Unexpected");
+
             }
         }
 
@@ -198,14 +206,20 @@
             public string Name { get; init; }
             public int StartInMs { get; set; }
             public int DurationInMs { get; set; }
-            public DataCenter Location { get; set; }
-            public int Slot { get; set; }
 
-            public JobInfo Job { get; set; }
 
+        }
+        public class LinkJobExecutionInfo : JobExecutionInfo
+        {
             public string ForJobName { get; init; }
             public DataCenter From { get; init; }
             public DataCenter To { get; init; }
+        }
+        public class WorkJobExecutionInfo : JobExecutionInfo
+        {
+            public JobInfo Job { get; set; }
+            public DataCenter Location { get; set; }
+            public int Slot { get; set; }
         }
     }
 }

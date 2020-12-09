@@ -114,7 +114,14 @@ scale 1000 as 100 pixels
             }
 
             var timimgSb = new StringBuilder();
-            foreach (var group in col.allJobs.GroupBy(_ => _.Job == null ? simplifyLink(_.Name) : $"{_.Location}_{_.Slot}"))
+
+            static string simplifyLink(string name) => name.Replace(" -> ", "_");
+            static string getName(JobExecutionInfo _)
+                => _ is LinkJobExecutionInfo lj ? simplifyLink(lj.Name)
+                : _ is WorkJobExecutionInfo wj ? $"{wj.Location}_{wj.Slot}"
+                : throw new Exception("Unexpected");
+
+            foreach (var group in col.allJobs.GroupBy(_ => getName(_)))
             {
                 timimgSb.AppendLine($"@{group.Key}");
 
@@ -122,10 +129,10 @@ scale 1000 as 100 pixels
                 var lastDuration = 0;
                 foreach (var job in group.OrderBy(_ => _.StartInMs))
                 {
-                    var offset = job.Job == null ? job.StartInMs : job.StartInMs - lastTime;
+                    var offset = job is LinkJobExecutionInfo ? job.StartInMs : job.StartInMs - lastTime;
                     if (lastTime == 0 && offset > 0) timimgSb.AppendLine($"0 is {{-}}");
 
-                    timimgSb.AppendLine($"{(offset == 0 ? "0" : $"+{ offset}") } is {(job.Job == null ? $"transfer_{job.ForJobName}" : job.Name)}");
+                    timimgSb.AppendLine($"{(offset == 0 ? "0" : $"+{ offset}") } is {(job is LinkJobExecutionInfo lj ? $"transfer_{lj.ForJobName}" : job.Name)}");
 
                     lastTime = job.StartInMs + job.DurationInMs;
                     lastDuration = job.DurationInMs;
@@ -135,8 +142,6 @@ scale 1000 as 100 pixels
 
                 timimgSb.AppendLine();
             }
-
-            string simplifyLink(string name) => name.Replace(" -> ", "_");
 
             var outputText = t
                 .Replace("{{DEFINITIONS}}", definitionSb.ToString())
