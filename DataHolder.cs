@@ -52,6 +52,7 @@
                 yield return new JobInfo
                 {
                     Name = csv.GetField<string>(RowSubJob),
+                    DurationInMs = (int)(csv.GetField<double>(RowExecutionTime) * 1000),
                     Dependences = deps,
                 };
             }
@@ -131,6 +132,7 @@
         public class JobInfo
         {
             public string Name { get; init; }
+            public int DurationInMs { get; init; }
             public JobDependence[] Dependences { get; init; }
         }
 

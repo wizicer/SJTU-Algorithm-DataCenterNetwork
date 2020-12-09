@@ -20,7 +20,27 @@
 
             var jobs = data.Jobs.ToArray();
 
-            dfs(ps, slots, links, jobs, new JobExecutionInfoCollection(), _ => Console.WriteLine(_.ToString()));
+            var list = new List<JobExecutionInfoCollection>();
+            var best = int.MaxValue;
+            dfs(ps, slots, links, jobs, new JobExecutionInfoCollection(data), _ =>
+            {
+                _.Calculate();
+                if (_.Time < best)
+                {
+                    best = _.Time;
+                    list.Clear();
+                }
+
+                if (_.Time == best)
+                {
+                    list.Add(_);
+                }
+            });
+
+            foreach (var item in list)
+            {
+                Console.WriteLine(item.ToString());
+            }
         }
 
         private void dfs(
@@ -66,7 +86,7 @@
                         slots.Where(_ => _ != slot).ToArray(),
                         links,
                         jobs.Where(_ => _ != job).ToArray(),
-                        jobExecutions + new JobExecutionInfo { Name = job.Name, Location = slot.location },
+                        jobExecutions + new JobExecutionInfo { Name = job.Name, Location = slot.location, DurationInMs = job.DurationInMs, Job = job },
                         callbackFound);
                 }
             }
@@ -74,15 +94,18 @@
 
         public class JobExecutionInfoCollection : IReadOnlyCollection<JobExecutionInfo>
         {
+            private readonly DataHolder data;
             private readonly JobExecutionInfo[] jobs;
+            private JobExecutionInfo[] allJobs;
 
-            public JobExecutionInfoCollection()
-                : this(new JobExecutionInfo[] { })
+            public JobExecutionInfoCollection(DataHolder data)
+                : this(data, new JobExecutionInfo[] { })
             {
             }
 
-            public JobExecutionInfoCollection(JobExecutionInfo[] jobs)
+            public JobExecutionInfoCollection(DataHolder data, JobExecutionInfo[] jobs)
             {
+                this.data = data;
                 this.jobs = jobs;
             }
 
@@ -94,12 +117,65 @@
 
             public static JobExecutionInfoCollection operator +(JobExecutionInfoCollection collection, JobExecutionInfo job)
             {
-                return new JobExecutionInfoCollection(collection.jobs.Concat(new[] { job }).ToArray());
+                return new JobExecutionInfoCollection(collection.data, collection.jobs.Concat(new[] { job }).ToArray());
             }
+
+            internal void Calculate()
+            {
+                var ps = data.Partitions.ToDictionary(_ => _.Partition, _ => new { dc = _.DataCenter, avail = 0 });
+                var linkJobs = new List<JobExecutionInfo>();
+                var workJobs = new List<JobExecutionInfo>();
+                foreach (var job in jobs)
+                {
+                    var depFinishTime = 0;
+                    foreach (var dep in job.Job.Dependences)
+                    {
+                        var avail = ps[dep.Depend].avail;
+                        var from = ps[dep.Depend].dc;
+                        var to = job.Location;
+                        var link = data.Links.FirstOrDefault(_ => _.From == from && _.To == to);
+                        var flow = $"{from} -> {to}";
+                        if (from != to)
+                        {
+                            var exist = linkJobs.Where(_ => _.Name == flow)
+                                .OrderByDescending(_ => _.StartInMs)
+                                .FirstOrDefault();
+                            var start = exist == null ? avail : exist.StartInMs + exist.DurationInMs;
+                            var duration = (int)Math.Ceiling(dep.Size * 1000d / link.Bandwidth);
+                            linkJobs.Add(new JobExecutionInfo { Name = flow, DurationInMs = duration, StartInMs = start, });
+                            depFinishTime = start + duration;
+                        }
+                    }
+
+                    workJobs.Add(new JobExecutionInfo
+                    {
+                        Job = job.Job,
+                        Name = job.Name,
+                        DurationInMs = job.DurationInMs,
+                        Location = job.Location,
+                        StartInMs = depFinishTime,
+                    });
+
+                    ps.Add(job.Name, new { dc = job.Location, avail = depFinishTime + job.DurationInMs });
+                }
+
+                this.allJobs = workJobs
+                    .Concat(linkJobs)
+                    .ToArray();
+            }
+
+            public int Time => this.allJobs
+                .Select(_ => _.StartInMs + _.DurationInMs)
+                .OrderByDescending(_ => _)
+                .First();
 
             public override string ToString()
             {
-                return string.Join(", ", jobs.Select(_ => $"{_.Name}[{_.Location}]"));
+                var strJobs = allJobs
+                    .OrderBy(_ => _.StartInMs)
+                    .Select(_ => (_.Job == null ? $"{_.Name}" : $"{_.Name}[{_.Location}]") + $" ({_.StartInMs}, {_.DurationInMs})")
+                    ;
+                return $"{Time}: " + string.Join(", ", strJobs);
             }
         }
 
@@ -109,6 +185,7 @@
             public int StartInMs { get; set; }
             public int DurationInMs { get; set; }
             public DataCenter Location { get; set; }
+            public JobInfo Job { get; set; }
         }
     }
 }
