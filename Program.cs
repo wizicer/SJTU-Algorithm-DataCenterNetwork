@@ -16,8 +16,8 @@
 
             var vis = new Visualizer();
             vis.VisualizeTiming(colList.Last(), "timing.png");
-            //vis.VisualizeRelationship(dh, "datacenters.png");
-            //vis.VisualizeTask(dh, "task.png");
+            vis.VisualizeRelationship(dh, "datacenters.png");
+            vis.VisualizeTask(dh, "task.png");
         }
     }
 }

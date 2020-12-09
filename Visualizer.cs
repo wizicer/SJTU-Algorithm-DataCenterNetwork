@@ -85,7 +85,7 @@ subgraph cluster_{{NAME}} {
 
         public void VisualizeTiming(JobExecutionInfoCollection col, string output)
         {
-            var t = @"@startuml
+            var t = @"@startuml {{OUTPUT}}
 scale 1000 as 100 pixels
 {{DEFINITIONS}}
 
@@ -144,11 +144,13 @@ scale 1000 as 100 pixels
             }
 
             var outputText = t
+                .Replace("{{OUTPUT}}", output)
                 .Replace("{{DEFINITIONS}}", definitionSb.ToString())
                 .Replace("{{TIMINGS}}", timimgSb.ToString());
 
             File.WriteAllText("temp.uml", outputText);
             //Process.Start("java", $" -jar plantuml.jar temp.uml");
+            Process.Start(@"C:\DevTools\jrex86\bin\java.exe", $@" -jar C:\Tools\jar\plantuml.jar temp.uml");
         }
 
         private string Indent(string input, int indent = 2)
