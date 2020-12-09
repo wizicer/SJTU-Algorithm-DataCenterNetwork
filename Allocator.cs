@@ -3,6 +3,7 @@
     using System;
     using System.Collections;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
     using static NetworkAlgorithm.DataHolder;
 
@@ -22,18 +23,19 @@
 
             var list = new List<JobExecutionInfoCollection>();
             var best = int.MaxValue;
-            dfs(ps, slots, links, jobs, new JobExecutionInfoCollection(data), _ =>
+            dfs(ps, slots, links, jobs, new JobExecutionInfoCollection(data), col =>
             {
-                _.Calculate();
-                if (_.Time < best)
+                col.Calculate();
+                if (col.Time < best)
                 {
-                    best = _.Time;
+                    best = col.Time;
                     list.Clear();
+                    Console.WriteLine(col.ToString());
                 }
 
-                if (_.Time == best)
+                if (col.Time == best)
                 {
-                    list.Add(_);
+                    list.Add(col);
                 }
             });
 
@@ -150,7 +152,7 @@
                                 Name = flow,
                                 DurationInMs = duration,
                                 StartInMs = start,
-                                ForJobName = dep.Depend,
+                                Partition = dep.Depend,
                                 From = from,
                                 To = to,
                             });
@@ -201,20 +203,23 @@
             }
         }
 
+        [DebuggerDisplay("{Name} ({StartInMs}, {DurationInMs})")]
         public class JobExecutionInfo
         {
             public string Name { get; init; }
             public int StartInMs { get; set; }
             public int DurationInMs { get; set; }
-
-
         }
+
+        [DebuggerDisplay("Link: {Name} {From}->{To} ({StartInMs}, {DurationInMs})")]
         public class LinkJobExecutionInfo : JobExecutionInfo
         {
-            public string ForJobName { get; init; }
+            public string Partition { get; init; }
             public DataCenter From { get; init; }
             public DataCenter To { get; init; }
         }
+
+        [DebuggerDisplay("Work: {Name} [{Location}_{Slot}] ({StartInMs}, {DurationInMs})")]
         public class WorkJobExecutionInfo : JobExecutionInfo
         {
             public JobInfo Job { get; set; }

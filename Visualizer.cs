@@ -132,7 +132,7 @@ scale 1000 as 100 pixels
                     var offset = job is LinkJobExecutionInfo ? job.StartInMs : job.StartInMs - lastTime;
                     if (lastTime == 0 && offset > 0) timimgSb.AppendLine($"0 is {{-}}");
 
-                    timimgSb.AppendLine($"{(offset == 0 ? "0" : $"+{ offset}") } is {(job is LinkJobExecutionInfo lj ? $"transfer_{lj.ForJobName}" : job.Name)}");
+                    timimgSb.AppendLine($"{(offset == 0 ? "0" : $"+{ offset}") } is {(job is LinkJobExecutionInfo lj ? $"transfer_{lj.Partition}" : job.Name)}");
 
                     lastTime = job.StartInMs + job.DurationInMs;
                     lastDuration = job.DurationInMs;
