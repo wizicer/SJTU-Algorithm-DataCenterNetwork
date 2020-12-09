@@ -125,20 +125,24 @@ scale 1000 as 100 pixels
             {
                 timimgSb.AppendLine($"@{group.Key}");
 
-                var lastTime = 0;
-                var lastDuration = 0;
+                JobExecutionInfo lastJob = null;
                 foreach (var job in group.OrderBy(_ => _.StartInMs))
                 {
+                    var lastTime = lastJob == null ? 0 : lastJob.StartInMs + lastJob.DurationInMs;
                     var offset = job is LinkJobExecutionInfo ? job.StartInMs : job.StartInMs - lastTime;
                     if (lastTime == 0 && offset > 0) timimgSb.AppendLine($"0 is {{-}}");
+                    var gap = job.StartInMs - lastTime;
+                    if (gap > 0 && lastTime > 0)
+                    {
+                        timimgSb.AppendLine($"+{gap} is {{-}}");
+                        offset -= gap;
+                    }
 
-                    timimgSb.AppendLine($"{(offset == 0 ? "0" : $"+{ offset}") } is {(job is LinkJobExecutionInfo lj ? $"transfer_{lj.Partition}" : job.Name)}");
-
-                    lastTime = job.StartInMs + job.DurationInMs;
-                    lastDuration = job.DurationInMs;
+                    timimgSb.AppendLine($"{(offset == 0 ? "0" : $"+{offset}") } is {(job is LinkJobExecutionInfo lj ? $"transfer_{lj.Partition}" : job.Name)}");
+                    lastJob = job;
                 }
 
-                if (lastDuration > 0) timimgSb.AppendLine($"+{lastDuration} is {{-}}");
+                if (lastJob.DurationInMs > 0) timimgSb.AppendLine($"+{lastJob.DurationInMs} is {{-}}");
 
                 timimgSb.AppendLine();
             }
