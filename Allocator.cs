@@ -145,7 +145,7 @@
                             var exist = linkJobs.Where(_ => _.Name == flow)
                                 .OrderByDescending(_ => _.StartInMs)
                                 .FirstOrDefault();
-                            var start = exist == null ? avail : exist.StartInMs + exist.DurationInMs;
+                            var start = Math.Max(avail, exist == null ? 0 : exist.StartInMs + exist.DurationInMs);
                             var duration = (int)Math.Ceiling(dep.Size * 1000d / link.Bandwidth);
                             linkJobs.Add(new LinkJobExecutionInfo
                             {
