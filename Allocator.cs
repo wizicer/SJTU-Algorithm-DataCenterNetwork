@@ -53,8 +53,8 @@
             JobExecutionInfoCollection jobExecutions,
             Action<JobExecutionInfoCollection> callbackFound)
         {
-            if (jobs.Length < 9)
-                Console.WriteLine($"ps: {ps.Count}, slots: {slots.Length}, jobs: {jobs.Length}, exec: {jobExecutions.Count}");
+            //if (jobs.Length < 9)
+            //    Console.WriteLine($"ps: {ps.Count}, slots: {slots.Length}, jobs: {jobs.Length}, exec: {jobExecutions.Count}");
             if (!jobs.Any())
             {
                 callbackFound(jobExecutions);
@@ -68,8 +68,8 @@
 
                 foreach (var slot in slots.GroupBy(_ => _.location).Select(_ => _.First()))
                 {
-                    // check partition link dependence
-                    if (!job.Dependences.All(dep => links.Any(link => link.Key == (ps[dep.Depend], slot.location)))) continue;
+                    // check partition dependence
+                    if (!job.Dependences.All(dep => ps.ContainsKey(dep.Depend))) continue;
 
                     dfs(
                         ps.Concat(new[] { new KeyValuePair<string, DataCenter>(job.Name, new DataCenter(slot.location)) }).ToDictionary(_ => _.Key, _ => _.Value),

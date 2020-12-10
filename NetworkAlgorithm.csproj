@@ -10,6 +10,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Level2SimpleData\DataCenterPartitions.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Level2SimpleData\DataCenterSlots.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Level2SimpleData\Inter-DatacenterLinks.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Level2SimpleData\JobList.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="taskdag.dot">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

@@ -50,28 +50,31 @@
                     var to = job.Location;
                     var part = parts.Any(_ => _.dc == to) ? parts.First(_ => _.dc == to) : parts.First();// assume only allow to copy from initial data center
                     var from = part.dc;
-                        var avail = part.avail;
+                    var avail = part.avail;
                     if (from != to)
                     {
-                        var link = data.Links.FirstOrDefault(_ => _.From == from && _.To == to);
-                        var flow = $"{from} -> {to}";
-                        var exist = linkJobs.Where(_ => _.Name == flow)
-                            .OrderByDescending(_ => _.StartInMs)
-                            .FirstOrDefault();
-                        var start = Math.Max(avail, exist == null ? 0 : exist.StartInMs + exist.DurationInMs);
-                        var duration = (int)Math.Ceiling(dep.Size * 1000d / link.Bandwidth);
-                        linkJobs.Add(new LinkJobExecutionInfo
+                        var aLink = data.AllLinks.FirstOrDefault(_ => _.From == from && _.To == to);
+                        foreach (var link in aLink.Links)
                         {
-                            Name = flow,
-                            DurationInMs = duration,
-                            StartInMs = start,
-                            Partition = dep.Depend,
-                            From = from,
-                            To = to,
-                        });
-                        var thisDepFinishTime = start + duration;
-                        parts.Add((to, thisDepFinishTime));
-                        if (depFinishTime < thisDepFinishTime) depFinishTime = thisDepFinishTime;
+                            var flow = $"{link.From} -> {link.To}";
+                            var exist = linkJobs.Where(_ => _.Name == flow)
+                                .OrderByDescending(_ => _.StartInMs)
+                                .FirstOrDefault();
+                            var start = Math.Max(avail, exist == null ? 0 : exist.StartInMs + exist.DurationInMs);
+                            var duration = (int)Math.Ceiling(dep.Size * 1000d / link.Bandwidth);
+                            linkJobs.Add(new LinkJobExecutionInfo
+                            {
+                                Name = flow,
+                                DurationInMs = duration,
+                                StartInMs = start,
+                                Partition = dep.Depend,
+                                From = link.From,
+                                To = link.To,
+                            });
+                            var thisDepFinishTime = start + duration;
+                            parts.Add((link.To, thisDepFinishTime));
+                            if (depFinishTime < thisDepFinishTime) depFinishTime = thisDepFinishTime;
+                        }
                     }
                     else
                     {
