@@ -16,7 +16,7 @@
         public JobExecutionInfoCollection[] Allocate(DataHolder data)
         {
             var ps = data.Partitions.ToDictionary(_ => _.Partition, _ => _.DataCenter);
-            var slots = data.Slots.SelectMany(_ => Enumerable.Range(0, _.Slot).Select(o => (_.DataCenter, o, new int[] { }))).ToArray();
+            var slots = data.Slots.SelectMany(_ => Enumerable.Range(0, _.Slot).Select(o => (_.DataCenter, o))).ToArray();
             var links = data.Links.ToDictionary(_ => (_.From, _.To), _ => _.Bandwidth);
 
             var jobs = data.Jobs.ToArray();
@@ -49,12 +49,14 @@
 
         private void dfs(
             IReadOnlyDictionary<string, DataCenter> ps,
-            (DataCenter location, int number, int[] occupations)[] slots,
+            (DataCenter location, int number)[] slots,
             IReadOnlyDictionary<(DataCenter From, DataCenter To), int> links,
             JobInfo[] jobs,
             JobExecutionInfoCollection jobExecutions,
             Action<JobExecutionInfoCollection> callbackFound)
         {
+            if (jobs.Length < 9)
+                Console.WriteLine($"ps: {ps.Count}, slots: {slots.Length}, jobs: {jobs.Length}, exec: {jobExecutions.Count}");
             if (!jobs.Any())
             {
                 callbackFound(jobExecutions);
@@ -63,27 +65,13 @@
 
             foreach (var job in jobs)
             {
+                // check partition dependence
+                if (!job.Dependences.All(dep => ps.Any(_ => _.Key == dep.Depend))) continue;
+
                 foreach (var slot in slots.GroupBy(_ => _.location).Select(_ => _.First()))
                 {
-                    var flagFeasible = true;
-
-                    // check dependence
-                    foreach (var dep in job.Dependences)
-                    {
-                        if (!ps.ContainsKey(dep.Depend))
-                        {
-                            flagFeasible = false;
-                            break;
-                        }
-
-                        if (!links.ContainsKey((ps[dep.Depend], slot.location)))
-                        {
-                            flagFeasible = false;
-                            break;
-                        }
-                    }
-
-                    if (!flagFeasible) continue; // not feasible to put into this slot, try next
+                    // check partition link dependence
+                    if (!job.Dependences.All(dep => links.Any(link => link.Key == (ps[dep.Depend], slot.location)))) continue;
 
                     dfs(
                         ps.Concat(new[] { new KeyValuePair<string, DataCenter>(job.Name, new DataCenter(slot.location)) }).ToDictionary(_ => _.Key, _ => _.Value),
