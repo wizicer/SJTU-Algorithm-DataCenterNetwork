@@ -125,24 +125,28 @@ scale 1000 as 100 pixels
             {
                 timimgSb.AppendLine($"@{group.Key}");
 
-                JobExecutionInfo lastJob = null;
-                foreach (var job in group.OrderBy(_ => _.StartInMs))
+                var list = new List<(int duration, string process)>();
+                var jobList = group.OrderBy(_ => _.StartInMs).ToArray();
+                for (int i = 0; i < jobList.Length; i++)
                 {
-                    var lastTime = lastJob == null ? 0 : lastJob.StartInMs + lastJob.DurationInMs;
-                    var offset = job is LinkJobExecutionInfo ? job.StartInMs : job.StartInMs - lastTime;
-                    if (lastTime == 0 && offset > 0) timimgSb.AppendLine($"0 is {{-}}");
-                    var gap = job.StartInMs - lastTime;
-                    if (gap > 0 && lastTime > 0)
-                    {
-                        timimgSb.AppendLine($"+{gap} is {{-}}");
-                        offset -= gap;
-                    }
+                    var job = jobList[i];
+                    var lastJob = i - 1 >= 0 ? jobList[i - 1] : null;
 
-                    timimgSb.AppendLine($"{(offset == 0 ? "0" : $"+{offset}") } is {(job is LinkJobExecutionInfo lj ? $"transfer_{lj.Partition}" : job.Name)}");
-                    lastJob = job;
+                    var lastTime = lastJob == null ? 0 : lastJob.StartInMs + lastJob.DurationInMs;
+                    var gap = job.StartInMs - lastTime;
+                    if (gap > 0) list.Add((gap, "{-}"));
+                    list.Add((job.DurationInMs, job is LinkJobExecutionInfo lj ? $"transfer_{lj.Partition}" : job.Name));
                 }
 
-                if (lastJob.DurationInMs > 0) timimgSb.AppendLine($"+{lastJob.DurationInMs} is {{-}}");
+                var offset = 0;
+                for (int i = 0; i < list.Count; i++)
+                {
+                    var (duration, process) = list[i];
+                    timimgSb.AppendLine($"{(offset == 0 ? "0" : $"+{offset}") } is {process}");
+                    offset = duration;
+                }
+
+                timimgSb.AppendLine($"{(offset == 0 ? "0" : $"+{offset}") } is {{-}}");
 
                 timimgSb.AppendLine();
             }

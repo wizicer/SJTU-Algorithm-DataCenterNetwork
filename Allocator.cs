@@ -73,7 +73,7 @@
 
                     dfs(
                         ps.Concat(new[] { new KeyValuePair<string, DataCenter>(job.Name, new DataCenter(slot.location)) }).ToDictionary(_ => _.Key, _ => _.Value),
-                        slots.Where(_ => _ != slot).ToArray(),
+                        slots.ToArray(),
                         links,
                         jobs.Where(_ => _ != job).ToArray(),
                         jobExecutions + new WorkJobExecutionInfo { Name = job.Name, Location = slot.location, DurationInMs = job.DurationInMs, Slot = slot.number, Job = job },
