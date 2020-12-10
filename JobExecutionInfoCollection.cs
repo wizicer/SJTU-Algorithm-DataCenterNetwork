@@ -38,7 +38,7 @@
 
         internal void Calculate()
         {
-            var ps = data.Partitions.ToDictionary(_ => _.Partition, _ => new { dc = _.DataCenter, avail = 0 });
+            var ps = data.Partitions.ToDictionary(_ => _.Partition, _ => new { parts = new List<(DataCenter dc, int avail)>(new[] { (_.DataCenter, 0) }) });
             var linkJobs = new List<LinkJobExecutionInfo>();
             var workJobs = new List<WorkJobExecutionInfo>();
             foreach (var job in jobs)
@@ -46,13 +46,15 @@
                 var depFinishTime = 0;
                 foreach (var dep in job.Job.Dependences)
                 {
-                    var avail = ps[dep.Depend].avail;
-                    var from = ps[dep.Depend].dc;
+                    var parts = ps[dep.Depend].parts;
                     var to = job.Location;
-                    var link = data.Links.FirstOrDefault(_ => _.From == from && _.To == to);
-                    var flow = $"{from} -> {to}";
+                    var part = parts.Any(_ => _.dc == to) ? parts.First(_ => _.dc == to) : parts.First();// assume only allow to copy from initial data center
+                    var from = part.dc;
+                        var avail = part.avail;
                     if (from != to)
                     {
+                        var link = data.Links.FirstOrDefault(_ => _.From == from && _.To == to);
+                        var flow = $"{from} -> {to}";
                         var exist = linkJobs.Where(_ => _.Name == flow)
                             .OrderByDescending(_ => _.StartInMs)
                             .FirstOrDefault();
@@ -68,7 +70,12 @@
                             To = to,
                         });
                         var thisDepFinishTime = start + duration;
+                        parts.Add((to, thisDepFinishTime));
                         if (depFinishTime < thisDepFinishTime) depFinishTime = thisDepFinishTime;
+                    }
+                    else
+                    {
+                        depFinishTime = Math.Max(depFinishTime, avail);
                     }
                 }
 
@@ -82,7 +89,7 @@
                     StartInMs = depFinishTime,
                 });
 
-                ps.Add(job.Name, new { dc = job.Location, avail = depFinishTime + job.DurationInMs });
+                ps.Add(job.Name, new { parts = new List<(DataCenter dc, int avail)>(new[] { (job.Location, depFinishTime + job.DurationInMs) }) });
             }
 
             this.linkJobs = linkJobs.ToArray();
