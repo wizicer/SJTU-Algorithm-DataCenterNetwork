@@ -36,8 +36,8 @@
                 .Replace("{{CLUSTERS}}", Indent(clusterSb.ToString()))
                 .Replace("{{CONNECTION}}", Indent(linkSb.ToString()));
 
-            File.WriteAllText("temp.dot", outputText);
-            Process.Start("dot", $" -Tpng temp.dot -o {output}");
+            File.WriteAllText("temprelation.dot", outputText);
+            Process.Start("dot", $" -Tpng temprelation.dot -o {output}");
         }
 
         public void VisualizeTask(DataHolder data, string output)
@@ -62,8 +62,8 @@
                 .Replace("{{CLUSTERS}}", Indent(clusterSb.ToString()))
                 .Replace("{{CONNECTION}}", Indent(jobSb.ToString()));
 
-            File.WriteAllText("temp.dot", outputText);
-            Process.Start("dot", $" -Tpng temp.dot -o {output}");
+            File.WriteAllText("temptask.dot", outputText);
+            Process.Start("dot", $" -Tpng temptask.dot -o {output}");
         }
 
         private string Cluster(string name, GraphNode[] nodes)
