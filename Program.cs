@@ -11,13 +11,14 @@
             var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SimpleData"));
             //var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ToyData"));
             dh.Init();
-            var alloc = new Allocator();
-            var colList = alloc.Allocate(dh);
 
             var vis = new Visualizer();
-            vis.VisualizeTiming(colList.Last(), "timing.png");
             vis.VisualizeRelationship(dh, "datacenters.png");
             vis.VisualizeTask(dh, "task.png");
+
+            var alloc = new Allocator();
+            var colList = alloc.Allocate(dh);
+            vis.VisualizeTiming(colList.Last(), "timing.png");
         }
     }
 }
