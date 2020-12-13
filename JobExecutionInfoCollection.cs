@@ -48,19 +48,20 @@
                 {
                     var parts = ps[dep.Depend].parts;
                     var to = job.Location;
-                    var part = parts.Any(_ => _.dc == to) ? parts.First(_ => _.dc == to) : parts.First();// assume only allow to copy from initial data center
+                    var part = parts.Any(_ => _.dc == to) ? parts.First(_ => _.dc == to) : parts.First();
                     var from = part.dc;
                     var avail = part.avail;
                     if (from != to)
                     {
                         var aLink = data.AllLinks.FirstOrDefault(_ => _.From == from && _.To == to);
+                        var thisLinkFinishTime = 0;
                         foreach (var link in aLink.Links)
                         {
                             var flow = $"{link.From} -> {link.To}";
                             var exist = linkJobs.Where(_ => _.Name == flow)
                                 .OrderByDescending(_ => _.StartInMs)
                                 .FirstOrDefault();
-                            var start = Math.Max(avail, exist == null ? 0 : exist.StartInMs + exist.DurationInMs);
+                            var start = Math.Max(thisLinkFinishTime, Math.Max(avail, exist == null ? 0 : exist.StartInMs + exist.DurationInMs));
                             var duration = (int)Math.Ceiling(dep.Size * 1000d / link.Bandwidth);
                             linkJobs.Add(new LinkJobExecutionInfo
                             {
@@ -71,10 +72,12 @@
                                 From = link.From,
                                 To = link.To,
                             });
-                            var thisDepFinishTime = start + duration;
-                            parts.Add((link.To, thisDepFinishTime));
-                            if (depFinishTime < thisDepFinishTime) depFinishTime = thisDepFinishTime;
+                            thisLinkFinishTime = start + duration;
+                            parts.Add((link.To, thisLinkFinishTime));
                         }
+
+                        var thisDepFinishTime = thisLinkFinishTime;
+                        if (depFinishTime < thisDepFinishTime) depFinishTime = thisDepFinishTime;
                     }
                     else
                     {
