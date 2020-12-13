@@ -34,6 +34,8 @@
                 if (col.Time == best)
                 {
                     list.Add(col);
+                    var vis = new Visualizer();
+                    vis.VisualizeTiming(col, "timing.png");
                 }
             });
 
@@ -68,9 +70,6 @@
 
                 foreach (var slot in slots.GroupBy(_ => _.location).Select(_ => _.First()))
                 {
-                    // check partition dependence
-                    if (!job.Dependences.All(dep => ps.ContainsKey(dep.Depend))) continue;
-
                     dfs(
                         ps.Concat(new[] { new KeyValuePair<string, DataCenter>(job.Name, new DataCenter(slot.location)) }).ToDictionary(_ => _.Key, _ => _.Value),
                         slots.ToArray(),
