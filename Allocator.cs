@@ -29,13 +29,13 @@
                     best = col.Time;
                     list.Clear();
                     Console.WriteLine(col.ToString());
+                    var vis = new Visualizer();
+                    vis.VisualizeTiming(col, "timing.png");
                 }
 
                 if (col.Time == best)
                 {
                     list.Add(col);
-                    var vis = new Visualizer();
-                    vis.VisualizeTiming(col, "timing.png");
                 }
             });
 
