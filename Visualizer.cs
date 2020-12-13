@@ -95,7 +95,7 @@ scale {{SCALE}} as 100 pixels
             var deflist = new List<(string display, string name, string group)>();
             foreach (var link in col.linkJobs)
             {
-                deflist.Add(($"{link.Name}", $"{simplifyLink(link.Name)}", link.To));
+                deflist.Add(($"<font color=seagreen><b>{link.From}</b> -> <b>{link.To}</b></font>", $"{simplifyLink(link.Name)}", link.To));
             }
             foreach (var slot in col.data.Slots)
             {
@@ -103,7 +103,7 @@ scale {{SCALE}} as 100 pixels
                 {
                     if (!col.jobs.Any(_ => _.Slot == i && _.Location == slot.DataCenter)) continue;
                     var ps = string.Join(",", col.data.Partitions.Where(_ => _.DataCenter == slot.DataCenter).Select(_ => _.Partition));
-                    deflist.Add(($"{slot.DataCenter} Slot{i} (With {ps})", $"{slot.DataCenter}_{i}", slot.DataCenter));
+                    deflist.Add(($"<font color=maroon><b>{slot.DataCenter} Slot{i}</b> (With {ps})", $"{slot.DataCenter}_{i}", slot.DataCenter));
                 }
             }
             var deflistDedup = deflist.GroupBy(_ => _.name).Select(_ => _.First());
@@ -137,7 +137,9 @@ scale {{SCALE}} as 100 pixels
                     var lastTime = lastJob == null ? 0 : lastJob.StartInMs + lastJob.DurationInMs;
                     var gap = job.StartInMs - lastTime;
                     if (gap > 0) list.Add((gap, "{-}"));
-                    list.Add((job.DurationInMs, job is LinkJobExecutionInfo lj ? $"transfer_{lj.Partition}" : job.Name));
+                    list.Add((job.DurationInMs, job is LinkJobExecutionInfo lj
+                        ? $"{lj.Partition} #lightgreen"
+                        : $"{job.Name} #tomato"));
                 }
 
                 var offset = 0;
