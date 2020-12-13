@@ -68,17 +68,54 @@
                 // check partition dependence
                 if (!job.Dependences.All(dep => ps.ContainsKey(dep.Depend))) continue;
 
-                foreach (var slot in slots.GroupBy(_ => _.location).Select(_ => _.First()))
+                var hslots = heuristic(job, ps, slots, links, jobs, jobExecutions);
+                foreach (var (location, number) in hslots)
                 {
                     dfs(
-                        ps.Concat(new[] { new KeyValuePair<string, DataCenter>(job.Name, new DataCenter(slot.location)) }).ToDictionary(_ => _.Key, _ => _.Value),
+                        ps.Concat(new[] { new KeyValuePair<string, DataCenter>(job.Name, new DataCenter(location)) }).ToDictionary(_ => _.Key, _ => _.Value),
                         slots.ToArray(),
                         links,
                         jobs.Where(_ => _ != job).ToArray(),
-                        jobExecutions + new WorkJobExecutionInfo { Name = job.Name, Location = slot.location, DurationInMs = job.DurationInMs, Slot = slot.number, Job = job },
+                        jobExecutions + new WorkJobExecutionInfo { Name = job.Name, Location = location, DurationInMs = job.DurationInMs, Slot = number, Job = job },
                         callbackFound);
                 }
             }
+        }
+
+        private IEnumerable<(DataCenter location, int number)> heuristic(
+            JobInfo job,
+            IReadOnlyDictionary<string, DataCenter> ps,
+            (DataCenter location, int number)[] slots,
+            IReadOnlyDictionary<(DataCenter From, DataCenter To), int> links,
+            JobInfo[] jobs,
+            JobExecutionInfoCollection jobExecutions)
+        {
+            return slots
+                .GroupBy(_ => _.location)
+                .Select(_ => _.First())
+                .Select(_ => new
+                {
+                    slot = _,
+                    weight = (DataCenterContainsSameMainJob(_.location), DataCenterContainsMainJobPartitions(_.location)) switch
+                    {
+                        (true, true) => 3,
+                        (true, false) => 2,
+                        (false, true) => 1,
+                        _ => 0,
+                    }
+                })
+                .OrderByDescending(_ => _.weight)
+                .Select(_ => _.slot)
+                ;
+
+            bool DataCenterContainsSameMainJob(DataCenter location) => jobExecutions.OfType<WorkJobExecutionInfo>()
+                .Any(_ => _.Location == location && GetMainJobName(_.Name) == GetMainJobName(job.Name));
+
+            bool DataCenterContainsMainJobPartitions(DataCenter location) => ps
+                .Any(_ => _.Value == location && GetMainJobNameFromPartition(_.Key) == GetMainJobName(job.Name));
+
+            string GetMainJobName(string name) => name.Substring(1, 1);
+            string GetMainJobNameFromPartition(string partition) => partition.Substring(0, 1);
         }
     }
 }
