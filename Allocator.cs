@@ -21,6 +21,7 @@
 
             var list = new List<JobExecutionInfoCollection>();
             var best = int.MaxValue;
+            var dt = DateTime.Now;
             dfs(ps, slots, links, jobs, new JobExecutionInfoCollection(data), col =>
             {
                 col.Calculate();
@@ -29,13 +30,18 @@
                     best = col.Time;
                     list.Clear();
                     Console.WriteLine(col.ToString());
-                    var vis = new Visualizer();
-                    vis.VisualizeTiming(col, "timing.png");
+                    Visualizer.VisualizeTiming(col, "timingBest.png");
                 }
 
                 if (col.Time == best)
                 {
                     list.Add(col);
+                }
+
+                if ((DateTime.Now - dt).TotalSeconds > 5)
+                {
+                    Visualizer.VisualizeTiming(col, "timing.png");
+                    dt = DateTime.Now;
                 }
             });
 

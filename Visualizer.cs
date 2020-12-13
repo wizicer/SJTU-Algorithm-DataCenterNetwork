@@ -6,11 +6,10 @@
     using System.IO;
     using System.Linq;
     using System.Text;
-    using static NetworkAlgorithm.Allocator;
 
-    public class Visualizer
+    public static class Visualizer
     {
-        public void VisualizeRelationship(DataHolder data, string output)
+        public static void VisualizeRelationship(DataHolder data, string output)
         {
             var t = File.ReadAllText("relationship.dot");
             var clusterSb = new StringBuilder();
@@ -40,7 +39,7 @@
             Process.Start("dot", $" -Tpng temprelation.dot -o {output}");
         }
 
-        public void VisualizeTask(DataHolder data, string output)
+        public static void VisualizeTask(DataHolder data, string output)
         {
             var t = File.ReadAllText("taskdag.dot");
             var clusterSb = new StringBuilder();
@@ -66,7 +65,7 @@
             Process.Start("dot", $" -Tpng temptask.dot -o {output}");
         }
 
-        private string Cluster(string name, GraphNode[] nodes)
+        private static string Cluster(string name, GraphNode[] nodes)
         {
             var template = @"
 subgraph cluster_{{NAME}} {
@@ -83,7 +82,7 @@ subgraph cluster_{{NAME}} {
                 .Replace("{{NODES}}", Indent(string.Join(Environment.NewLine, nodes.Select(_ => _.ToString())), 2));
         }
 
-        public void VisualizeTiming(JobExecutionInfoCollection col, string output)
+        public static void VisualizeTiming(JobExecutionInfoCollection col, string output)
         {
             var t = @"@startuml {{OUTPUT}}
 scale {{SCALE}} as 100 pixels
@@ -180,7 +179,7 @@ scale {{SCALE}} as 100 pixels
             };
         }
 
-        private string Indent(string input, int indent = 2)
+        private static string Indent(string input, int indent = 2)
         {
             var pad = new string(' ', indent);
             return pad + input.Replace(Environment.NewLine, Environment.NewLine + pad);

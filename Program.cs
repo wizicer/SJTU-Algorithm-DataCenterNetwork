@@ -8,18 +8,17 @@
     {
         static void Main(string[] args)
         {
-            var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Level2SimpleData"));
+            //var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Level2SimpleData"));
             //var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SimpleData"));
-            //var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ToyData"));
+            var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ToyData"));
             dh.Init();
 
-            var vis = new Visualizer();
-            vis.VisualizeRelationship(dh, "datacenters.png");
-            vis.VisualizeTask(dh, "task.png");
+            Visualizer.VisualizeRelationship(dh, "datacenters.png");
+            Visualizer.VisualizeTask(dh, "task.png");
 
             var alloc = new Allocator();
             var colList = alloc.Allocate(dh);
-            vis.VisualizeTiming(colList.Last(), "timing.png");
+            Visualizer.VisualizeTiming(colList.Last(), "timing.png");
         }
     }
 }
