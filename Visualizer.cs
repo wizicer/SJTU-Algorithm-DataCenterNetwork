@@ -101,11 +101,13 @@ scale {{SCALE}} as 100 pixels
             {
                 for (int i = 0; i < slot.Slot; i++)
                 {
+                    if (!col.jobs.Any(_ => _.Slot == i && _.Location == slot.DataCenter)) continue;
                     var ps = string.Join(",", col.data.Partitions.Where(_ => _.DataCenter == slot.DataCenter).Select(_ => _.Partition));
                     deflist.Add(($"{slot.DataCenter} Slot{i} (With {ps})", $"{slot.DataCenter}_{i}", slot.DataCenter));
                 }
             }
-            foreach (var group in deflist.GroupBy(_ => _.group))
+            var deflistDedup = deflist.GroupBy(_ => _.name).Select(_ => _.First());
+            foreach (var group in deflistDedup.GroupBy(_ => _.group))
             {
                 foreach (var def in group)
                 {
