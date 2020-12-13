@@ -66,7 +66,7 @@
             foreach (var job in jobs)
             {
                 // check partition dependence
-                if (!job.Dependences.All(dep => ps.Any(_ => _.Key == dep.Depend))) continue;
+                if (!job.Dependences.All(dep => ps.ContainsKey(dep.Depend))) continue;
 
                 foreach (var slot in slots.GroupBy(_ => _.location).Select(_ => _.First()))
                 {
