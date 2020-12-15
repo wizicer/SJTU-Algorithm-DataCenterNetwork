@@ -53,21 +53,18 @@
 
             csv.Read();
             csv.ReadHeader();
-            var depHeaders = csv.Context.HeaderRecord.Except(new[] { "Job", RowSubJob, RowExecutionTime, "Precedence Constraint" });
+            var depHeaders = csv.Context.HeaderRecord.Except(
+                new[] { "Job", RowSubJob, RowExecutionTime, "Precedence Constraint" });
             while (csv.Read())
             {
                 var deps = depHeaders
                     .Select(_ => new { name = _, number = csv.GetField(_) })
                     .Where(_ => !string.IsNullOrWhiteSpace(_.number))
-                    .Select(_ => new JobDependence { Depend = _.name, Size = int.Parse(_.number) })
+                    .Select(_ => new JobDependence(_.name, int.Parse(_.number)))
                     .ToArray();
 
-                yield return new JobInfo
-                {
-                    Name = csv.GetField<string>(RowSubJob),
-                    DurationInMs = (int)(csv.GetField<double>(RowExecutionTime) * 1000),
-                    Dependences = deps,
-                };
+                yield return new JobInfo(
+                    csv.GetField<string>(RowSubJob), (int)(csv.GetField<double>(RowExecutionTime) * 1000), deps);
             }
         }
 
@@ -90,12 +87,7 @@
 
                 foreach (var t in tos)
                 {
-                    yield return new DataCenterLink
-                    {
-                        From = from,
-                        To = t.name,
-                        Bandwidth = t.number,
-                    };
+                    yield return new DataCenterLink(from, t.name, t.number);
                 }
             }
         }
@@ -110,7 +102,7 @@
         }
 
         [DebuggerDisplay("{DataCenter}: {Partition}")]
-        public class DataCenterPartition
+        public record DataCenterPartition
         {
             [Name("Data Partition")]
             public string Partition { get; init; }
@@ -122,7 +114,7 @@
         }
 
         [DebuggerDisplay("{DataCenter}: {Slot}")]
-        public class DataCenterSlot
+        public record DataCenterSlot
         {
             [Name("DC")]
             public string DataCenterCsvString { get; init; }
@@ -134,90 +126,25 @@
         }
 
         [DebuggerDisplay("{From}->{To}: {Bandwidth}")]
-        public class DataCenterLink
-        {
-            public DataCenter From { get; init; }
-            public DataCenter To { get; init; }
-            public int Bandwidth { get; init; }
-        }
+        public record DataCenterLink(DataCenter From, DataCenter To, int Bandwidth);
 
         [DebuggerDisplay("Route {From}->{To} [{Links.Length}]: {MinBandwidth}")]
-        public class DataCenterArbitraryLink
-        {
-            public DataCenter From { get; init; }
-            public DataCenter To { get; init; }
-            public int MinBandwidth { get; init; }
-            public DataCenterLink[] Links { get; set; }
-        }
+        public record DataCenterArbitraryLink(
+            DataCenter From, DataCenter To, int MinBandwidth, DataCenterLink[] Links);
 
         [DebuggerDisplay("{Name}")]
-        public class JobInfo
-        {
-            public string Name { get; init; }
-            public int DurationInMs { get; init; }
-            public JobDependence[] Dependences { get; init; }
-        }
+        public record JobInfo(string Name, int DurationInMs, JobDependence[] Dependences);
 
         [DebuggerDisplay("{Depend}: {Size}")]
-        public class JobDependence
-        {
-            public string Depend { get; init; }
-            public int Size { get; init; }
-        }
+        public record JobDependence(string Depend, int Size);
 
         [DebuggerDisplay("{Value}")]
-        public class DataCenter
+        public record DataCenter(string Value)
         {
-            public DataCenter(string value)
-            {
-                Value = value;
-            }
+            public static implicit operator string(DataCenter dc) => dc.Value;
+            public static implicit operator DataCenter(string dc) => new DataCenter(dc);
 
-            public string Value { get; init; }
-
-            public static implicit operator string(DataCenter dc)
-            {
-                return dc.Value;
-            }
-
-            public static implicit operator DataCenter(string dc)
-            {
-                return new DataCenter(dc);
-            }
-
-            public override string ToString()
-            {
-                return Value;
-            }
-
-            public bool Equals(DataCenter other)
-            {
-                if (ReferenceEquals(other, null))
-                    return false;
-                if (ReferenceEquals(other, this))
-                    return true;
-                return Value == other.Value;
-            }
-
-            public override bool Equals(object obj)
-            {
-                return Equals(obj as DataCenter);
-            }
-
-            public override int GetHashCode()
-            {
-                return Value.GetHashCode();
-            }
-
-            public static bool operator ==(DataCenter left, DataCenter right)
-            {
-                return Equals(left, right);
-            }
-
-            public static bool operator !=(DataCenter left, DataCenter right)
-            {
-                return !(left == right);
-            }
+            public override string ToString() => Value;
         }
     }
     public class DijkstrasAlgorithm
@@ -303,13 +230,8 @@
                             _ => _.Item1)
                         .ToArray();
                     if (pathLinks.Length > 1) pathLinks = pathLinks.Where(_ => _.From != _.To).ToArray();
-                    yield return new DataHolder.DataCenterArbitraryLink
-                    {
-                        From = dataCenters[i],
-                        To = dataCenters[j],
-                        MinBandwidth = pathLinks.Min(_ => _.Bandwidth),
-                        Links = pathLinks,
-                    };
+                    yield return new DataHolder.DataCenterArbitraryLink(
+                        dataCenters[i], dataCenters[j], pathLinks.Min(_ => _.Bandwidth), pathLinks);
                 }
             }
 

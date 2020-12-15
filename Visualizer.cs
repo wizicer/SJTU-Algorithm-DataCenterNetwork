@@ -17,10 +17,10 @@
             {
                 var nodes = new List<GraphNode>();
                 nodes.AddRange(Enumerable.Range(0, dc.Slot)
-                    .Select(_ => new GraphNode { Label = "", Name = $"{dc.DataCenter}_{_}", Shape = GraphShape.circle }));
+                    .Select(_ => new GraphNode($"{dc.DataCenter}_{_}", "", GraphShape.circle)));
                 nodes.AddRange(data.Partitions
                     .Where(_ => _.DataCenter == dc.DataCenter)
-                    .Select(_ => new GraphNode { Label = _.Partition, Name = _.Partition, Shape = GraphShape.cylinder }));
+                    .Select(_ => new GraphNode(_.Partition, _.Partition, GraphShape.cylinder)));
                 clusterSb.AppendLine(Cluster(dc.DataCenter, nodes.ToArray()));
             }
 
@@ -185,12 +185,8 @@ scale {{SCALE}} as 100 pixels
             return pad + input.Replace(Environment.NewLine, Environment.NewLine + pad);
         }
 
-        public class GraphNode
+        public record GraphNode(string Name, string Label, GraphShape Shape)
         {
-            public string Name { get; init; }
-            public string Label { get; init; }
-            public GraphShape Shape { get; init; }
-
             public override string ToString()
             {
                 return $"{Name} [label = \"{Label}\", shape = {Shape}];";

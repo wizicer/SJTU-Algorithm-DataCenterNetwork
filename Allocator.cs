@@ -22,7 +22,7 @@
             var list = new List<JobExecutionInfoCollection>();
             var best = int.MaxValue;
             var dt = DateTime.Now;
-            dfs(ps, slots, links, jobs, new JobExecutionInfoCollection(data), col =>
+            dfs(new AttemptInfo(ps, slots, links, jobs, new JobExecutionInfoCollection(data)), col =>
             {
                 col.Calculate();
                 if (col.Time < best)
@@ -54,13 +54,10 @@
         }
 
         private void dfs(
-            IReadOnlyDictionary<string, DataCenter> ps,
-            (DataCenter location, int number)[] slots,
-            IReadOnlyDictionary<(DataCenter From, DataCenter To), int> links,
-            JobInfo[] jobs,
-            JobExecutionInfoCollection jobExecutions,
+            AttemptInfo info,
             Action<JobExecutionInfoCollection> callbackFound)
         {
+            var (ps, slots, links, jobs, jobExecutions) = info;
             //if (jobs.Length < 9)
             //    Console.WriteLine($"ps: {ps.Count}, slots: {slots.Length}, jobs: {jobs.Length}, exec: {jobExecutions.Count}");
             if (!jobs.Any())
@@ -74,15 +71,16 @@
                 // check partition dependence
                 if (!job.Dependences.All(dep => ps.ContainsKey(dep.Depend))) continue;
 
-                var hslots = heuristic(job, ps, slots, links, jobs, jobExecutions);
+                var hslots = heuristic(job, info);
                 foreach (var (location, number) in hslots)
                 {
                     dfs(
-                        ps.Concat(new[] { new KeyValuePair<string, DataCenter>(job.Name, new DataCenter(location)) }).ToDictionary(_ => _.Key, _ => _.Value),
-                        slots.ToArray(),
-                        links,
-                        jobs.Where(_ => _ != job).ToArray(),
-                        jobExecutions + new WorkJobExecutionInfo { Name = job.Name, Location = location, DurationInMs = job.DurationInMs, Slot = number, Job = job },
+                        info with
+                        {
+                            PartitionDc = ps.Concat(new[] { new KeyValuePair<string, DataCenter>(job.Name, new DataCenter(location)) }).ToDictionary(_ => _.Key, _ => _.Value),
+                            Jobs = jobs.Where(_ => _ != job).ToArray(),
+                            Executions = jobExecutions + new WorkJobExecutionInfo { Name = job.Name, Location = location, DurationInMs = job.DurationInMs, Slot = number, Job = job }
+                        },
                         callbackFound);
                 }
             }
@@ -90,12 +88,9 @@
 
         private IEnumerable<(DataCenter location, int number)> heuristic(
             JobInfo job,
-            IReadOnlyDictionary<string, DataCenter> ps,
-            (DataCenter location, int number)[] slots,
-            IReadOnlyDictionary<(DataCenter From, DataCenter To), int> links,
-            JobInfo[] jobs,
-            JobExecutionInfoCollection jobExecutions)
+            AttemptInfo info)
         {
+            var (ps, slots, links, jobs, jobExecutions) = info;
             return slots
                 .GroupBy(_ => _.location)
                 .Select(_ => _.First())
@@ -123,5 +118,12 @@
             string GetMainJobName(string name) => name.Substring(1, 1);
             string GetMainJobNameFromPartition(string partition) => partition.Substring(0, 1);
         }
+
+        private record AttemptInfo(
+            IReadOnlyDictionary<string, DataCenter> PartitionDc,
+            (DataCenter location, int number)[] Slots,
+            IReadOnlyDictionary<(DataCenter From, DataCenter To), int> Links,
+            JobInfo[] Jobs,
+            JobExecutionInfoCollection Executions);
     }
 }
