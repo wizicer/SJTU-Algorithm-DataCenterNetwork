@@ -21,5 +21,7 @@
         }
 
         internal static string Indent(this StringBuilder input, int indent = 2) => input.ToString().Indent(indent);
+        internal static string SetFont(this string content, string? color)
+            => $"<font{(color == null ? "" : $" color={color}")}>{content}</font>";
     }
 }

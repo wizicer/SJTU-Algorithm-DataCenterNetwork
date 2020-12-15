@@ -17,11 +17,27 @@ scale {{SCALE}} as 100 pixels
 
 {{TIMINGS}}
 @enduml";
+
+            var outputText = t
+                .Replace("{{OUTPUT}}", output)
+                .Replace("{{SCALE}}", GetScale(col.Time).ToString())
+                .Replace("{{DEFINITIONS}}", GetDefinitions(col).ToString())
+                .Replace("{{TIMINGS}}", GetTimings(col).ToString());
+
+            File.WriteAllText("temp.uml", outputText);
+            //Process.Start("java", $" -jar plantuml.jar temp.uml");
+            Process.Start(@"C:\DevTools\jrex86\bin\java.exe", $@" -jar C:\Tools\jar\plantuml.jar temp.uml");
+        }
+
+        private static string SimplifyLink(string name) => name.Replace(" -> ", "_");
+
+        private static StringBuilder GetDefinitions(FinalExecutionInfoCollection col)
+        {
             var definitionSb = new StringBuilder();
             var deflist = new List<(string display, string name, string group)>();
             foreach (var link in col.LinkJobs)
             {
-                deflist.Add(($"<font color=seagreen><b>{link.From}</b> -> <b>{link.To}</b></font>", $"{simplifyLink(link.Name)}", link.To));
+                deflist.Add(($"<b>{link.From}</b> -> <b>{link.To}</b>".SetFont("seagreen"), $"{SimplifyLink(link.Name)}", link.To));
             }
             foreach (var slot in col.Data.Slots)
             {
@@ -29,7 +45,7 @@ scale {{SCALE}} as 100 pixels
                 {
                     if (!col.WorkJobs.Any(_ => _.Slot == i && _.Location == slot.DataCenter)) continue;
                     var ps = string.Join(",", col.Data.Partitions.Where(_ => _.DataCenter == slot.DataCenter).Select(_ => _.Partition));
-                    deflist.Add(($"<font color=maroon><b>{slot.DataCenter} Slot{i}</b> (With {ps})", $"{slot.DataCenter}_{i}", slot.DataCenter));
+                    deflist.Add(($"<b>{slot.DataCenter} Slot{i}</b> (With {ps})".SetFont("maroon"), $"{slot.DataCenter}_{i}", slot.DataCenter));
                 }
             }
             var deflistDedup = deflist.GroupBy(_ => _.name).Select(_ => _.First());
@@ -41,11 +57,14 @@ scale {{SCALE}} as 100 pixels
                 }
             }
 
-            var timimgSb = new StringBuilder();
+            return definitionSb;
+        }
 
-            static string simplifyLink(string name) => name.Replace(" -> ", "_");
+        private static StringBuilder GetTimings(FinalExecutionInfoCollection col)
+        {
+            var timimgSb = new StringBuilder();
             static string getName(JobExecutionInfo _)
-                => _ is LinkJobExecutionInfo lj ? simplifyLink(lj.Name)
+                => _ is LinkJobExecutionInfo lj ? SimplifyLink(lj.Name)
                 : _ is WorkJobExecutionInfo wj ? $"{wj.Location}_{wj.Slot}"
                 : throw new Exception("Unexpected");
 
@@ -81,15 +100,7 @@ scale {{SCALE}} as 100 pixels
                 timimgSb.AppendLine();
             }
 
-            var outputText = t
-                .Replace("{{OUTPUT}}", output)
-                .Replace("{{SCALE}}", GetScale(col.Time).ToString())
-                .Replace("{{DEFINITIONS}}", definitionSb.ToString())
-                .Replace("{{TIMINGS}}", timimgSb.ToString());
-
-            File.WriteAllText("temp.uml", outputText);
-            //Process.Start("java", $" -jar plantuml.jar temp.uml");
-            Process.Start(@"C:\DevTools\jrex86\bin\java.exe", $@" -jar C:\Tools\jar\plantuml.jar temp.uml");
+            return timimgSb;
         }
 
         private static int GetScale(int milliseconds)
