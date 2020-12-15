@@ -11,7 +11,7 @@
         {
         }
 
-        public JobExecutionInfoCollection[] Allocate(DataHolder data)
+        public FinalExecutionInfoCollection[] Allocate(DataHolder data)
         {
             var ps = data.Partitions.ToDictionary(_ => _.Partition, _ => _.DataCenter);
             var slots = data.Slots.SelectMany(_ => Enumerable.Range(0, _.Slot).Select(o => (_.DataCenter, o))).ToArray();
@@ -19,28 +19,28 @@
 
             var jobs = data.Jobs.ToArray();
 
-            var list = new List<JobExecutionInfoCollection>();
+            var list = new List<FinalExecutionInfoCollection>();
             var best = int.MaxValue;
             var dt = DateTime.Now;
             dfs(new AttemptInfo(ps, slots, links, jobs, new JobExecutionInfoCollection(data)), col =>
             {
-                col.Calculate();
-                if (col.Time < best)
+                var result = col.Calculate();
+                if (result.Time < best)
                 {
-                    best = col.Time;
+                    best = result.Time;
                     list.Clear();
-                    Console.WriteLine(col.ToString());
-                    Visualizer.VisualizeTiming(col, "timingBest.png");
+                    Console.WriteLine(result.ToString());
+                    Visualizer.VisualizeTiming(result, "timingBest.png");
                 }
 
-                if (col.Time == best)
+                if (result.Time == best)
                 {
-                    list.Add(col);
+                    list.Add(result);
                 }
 
                 if ((DateTime.Now - dt).TotalSeconds > 5)
                 {
-                    Visualizer.VisualizeTiming(col, "timing.png");
+                    Visualizer.VisualizeTiming(result, "timing.png");
                     dt = DateTime.Now;
                 }
             });

@@ -3,16 +3,13 @@
     using System;
     using System.Collections;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Linq;
     using static NetworkAlgorithm.DataHolder;
 
     public class JobExecutionInfoCollection : IReadOnlyCollection<JobExecutionInfo>
     {
-        internal readonly DataHolder data;
-        internal readonly WorkJobExecutionInfo[] jobs;
-        internal LinkJobExecutionInfo[]? linkJobs;
-        internal JobExecutionInfo[]? allJobs;
+        private readonly DataHolder data;
+        private readonly WorkJobExecutionInfo[] jobs;
 
         public JobExecutionInfoCollection(DataHolder data)
             : this(data, new WorkJobExecutionInfo[] { })
@@ -36,7 +33,7 @@
             return new JobExecutionInfoCollection(collection.data, collection.jobs.Concat(new[] { job }).ToArray());
         }
 
-        internal void Calculate()
+        internal FinalExecutionInfoCollection Calculate()
         {
             var ps = data.Partitions.ToDictionary(_ => _.Partition, _ => new { parts = new List<(DataCenter dc, int avail)>(new[] { (_.DataCenter, 0) }) });
             var linkJobs = new List<LinkJobExecutionInfo>();
@@ -91,33 +88,7 @@
                 ps.Add(job.Name, new { parts = new List<(DataCenter dc, int avail)>(new[] { (job.Location, depFinishTime + job.DurationInMs) }) });
             }
 
-            this.linkJobs = linkJobs.ToArray();
-            this.allJobs = workJobs
-                .OfType<JobExecutionInfo>()
-                .Concat(linkJobs)
-                .ToArray();
-        }
-
-        public int Time => this.allJobs
-            .Select(_ => _.StartInMs + _.DurationInMs)
-            .OrderByDescending(_ => _)
-            .First();
-
-        public override string? ToString()
-        {
-            if (this.allJobs == null) return base.ToString();
-            var strJobs = this.allJobs
-                .OrderBy(_ => _.StartInMs)
-                .Select(_ => getName(_)
-                    + $" ({_.StartInMs}, {_.DurationInMs})")
-                ;
-            return $"{Time}: " + string.Join(", ", strJobs);
-
-            static string getName(JobExecutionInfo _)
-                => _ is LinkJobExecutionInfo lj ? $"{lj.Name}"
-                : _ is WorkJobExecutionInfo wj ? $"{wj.Name}[{wj.Location}]"
-                : throw new Exception("Unexpected");
-
+            return new FinalExecutionInfoCollection(this.data, linkJobs.ToArray(), workJobs.ToArray());
         }
     }
 }

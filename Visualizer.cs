@@ -82,7 +82,7 @@ subgraph cluster_{{NAME}} {
                 .Replace("{{NODES}}", Indent(string.Join(Environment.NewLine, nodes.Select(_ => _.ToString())), 2));
         }
 
-        public static void VisualizeTiming(JobExecutionInfoCollection col, string output)
+        public static void VisualizeTiming(FinalExecutionInfoCollection col, string output)
         {
             var t = @"@startuml {{OUTPUT}}
 scale {{SCALE}} as 100 pixels
@@ -92,16 +92,16 @@ scale {{SCALE}} as 100 pixels
 @enduml";
             var definitionSb = new StringBuilder();
             var deflist = new List<(string display, string name, string group)>();
-            foreach (var link in col.linkJobs)
+            foreach (var link in col.LinkJobs)
             {
                 deflist.Add(($"<font color=seagreen><b>{link.From}</b> -> <b>{link.To}</b></font>", $"{simplifyLink(link.Name)}", link.To));
             }
-            foreach (var slot in col.data.Slots)
+            foreach (var slot in col.Data.Slots)
             {
                 for (int i = 0; i < slot.Slot; i++)
                 {
-                    if (!col.jobs.Any(_ => _.Slot == i && _.Location == slot.DataCenter)) continue;
-                    var ps = string.Join(",", col.data.Partitions.Where(_ => _.DataCenter == slot.DataCenter).Select(_ => _.Partition));
+                    if (!col.WorkJobs.Any(_ => _.Slot == i && _.Location == slot.DataCenter)) continue;
+                    var ps = string.Join(",", col.Data.Partitions.Where(_ => _.DataCenter == slot.DataCenter).Select(_ => _.Partition));
                     deflist.Add(($"<font color=maroon><b>{slot.DataCenter} Slot{i}</b> (With {ps})", $"{slot.DataCenter}_{i}", slot.DataCenter));
                 }
             }
@@ -122,7 +122,7 @@ scale {{SCALE}} as 100 pixels
                 : _ is WorkJobExecutionInfo wj ? $"{wj.Location}_{wj.Slot}"
                 : throw new Exception("Unexpected");
 
-            foreach (var group in col.allJobs.GroupBy(_ => getName(_)))
+            foreach (var group in col.AllJobs.GroupBy(_ => getName(_)))
             {
                 timimgSb.AppendLine($"@{group.Key}");
 
