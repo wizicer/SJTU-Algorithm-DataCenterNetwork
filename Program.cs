@@ -11,7 +11,6 @@
             //var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Level2SimpleData"));
             //var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SimpleData"));
             var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ToyData"));
-            dh.Init();
 
             Visualizer.VisualizeRelationship(dh, "datacenters.png");
             Visualizer.VisualizeTask(dh, "task.png");

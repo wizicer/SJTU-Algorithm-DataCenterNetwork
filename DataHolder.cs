@@ -1,12 +1,12 @@
 ﻿namespace NetworkAlgorithm
 {
+    using CsvHelper;
+    using CsvHelper.Configuration.Attributes;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Globalization;
     using System.IO;
     using System.Linq;
-    using CsvHelper;
-    using CsvHelper.Configuration.Attributes;
 
     public class DataHolder
     {
@@ -18,6 +18,11 @@
         public DataHolder(string basePath)
         {
             this.basePath = basePath;
+            this.Partitions = GetRecords<DataCenterPartition>(Path.Combine(this.basePath, "DataCenterPartitions.csv"));
+            this.Slots = GetRecords<DataCenterSlot>(Path.Combine(this.basePath, "DataCenterSlots.csv"));
+            this.Jobs = GetJobs(Path.Combine(this.basePath, "JobList.csv")).ToArray();
+            this.Links = GetLinks(Path.Combine(this.basePath, "Inter-DatacenterLinks.csv")).ToArray();
+            this.AllLinks = GetArbitraryLinks(this.Links);
         }
 
         public DataCenterPartition[] Partitions { get; set; }
@@ -25,15 +30,6 @@
         public JobInfo[] Jobs { get; set; }
         public DataCenterLink[] Links { get; set; }
         public DataCenterArbitraryLink[] AllLinks { get; set; }
-
-        public void Init()
-        {
-            this.Partitions = GetRecords<DataCenterPartition>(Path.Combine(this.basePath, "DataCenterPartitions.csv"));
-            this.Slots = GetRecords<DataCenterSlot>(Path.Combine(this.basePath, "DataCenterSlots.csv"));
-            this.Jobs = GetJobs(Path.Combine(this.basePath, "JobList.csv")).ToArray();
-            this.Links = GetLinks(Path.Combine(this.basePath, "Inter-DatacenterLinks.csv")).ToArray();
-            this.AllLinks = GetArbitraryLinks(this.Links);
-        }
 
         private DataCenterArbitraryLink[] GetArbitraryLinks(DataCenterLink[] links)
         {
@@ -104,25 +100,35 @@
         [DebuggerDisplay("{DataCenter}: {Partition}")]
         public record DataCenterPartition
         {
-            [Name("Data Partition")]
-            public string Partition { get; init; }
-
-            [Name("Location")]
-            public string DataCenterCsvString { get; init; }
+            public string Partition { get; }
+            public string DataCenterCsvString { get; }
 
             public DataCenter DataCenter => DataCenterCsvString;
+
+            public DataCenterPartition(
+                [Name("Data Partition")] string partition,
+                [Name("Location")] string dataCenterCsvString)
+            {
+                Partition = partition;
+                DataCenterCsvString = dataCenterCsvString;
+            }
         }
 
         [DebuggerDisplay("{DataCenter}: {Slot}")]
         public record DataCenterSlot
         {
-            [Name("DC")]
-            public string DataCenterCsvString { get; init; }
-
-            [Name("Num of Slots")]
-            public int Slot { get; init; }
+            public string DataCenterCsvString { get; }
+            public int Slot { get; }
 
             public DataCenter DataCenter => DataCenterCsvString;
+
+            public DataCenterSlot(
+                [Name("DC")] string dataCenterCsvString,
+                [Name("Num of Slots")] int slot)
+            {
+                DataCenterCsvString = dataCenterCsvString;
+                Slot = slot;
+            }
         }
 
         [DebuggerDisplay("{From}->{To}: {Bandwidth}")]

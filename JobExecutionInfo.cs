@@ -4,26 +4,21 @@
     using static NetworkAlgorithm.DataHolder;
 
     [DebuggerDisplay("{Name} ({StartInMs}, {DurationInMs})")]
-    public class JobExecutionInfo
+    public record JobExecutionInfo(string Name)
     {
-        public string Name { get; init; }
-        public int StartInMs { get; set; }
-        public int DurationInMs { get; set; }
+        public int StartInMs { get; init; }
+        public int DurationInMs { get; init; }
     }
 
     [DebuggerDisplay("Link: {Name} {From}->{To} [{Partition}] ({StartInMs}, {DurationInMs})")]
-    public class LinkJobExecutionInfo : JobExecutionInfo
+    public record LinkJobExecutionInfo(string Name, string Partition, DataCenter From, DataCenter To)
+        : JobExecutionInfo(Name)
     {
-        public string Partition { get; init; }
-        public DataCenter From { get; init; }
-        public DataCenter To { get; init; }
     }
 
     [DebuggerDisplay("Work: {Name} [{Location}_{Slot}] ({StartInMs}, {DurationInMs})")]
-    public class WorkJobExecutionInfo : JobExecutionInfo
+    public record WorkJobExecutionInfo(string Name, JobInfo Job, DataCenter Location, int Slot)
+        : JobExecutionInfo(Name)
     {
-        public JobInfo Job { get; set; }
-        public DataCenter Location { get; set; }
-        public int Slot { get; set; }
     }
 }

@@ -79,7 +79,7 @@
                         {
                             PartitionDc = ps.Concat(new[] { new KeyValuePair<string, DataCenter>(job.Name, new DataCenter(location)) }).ToDictionary(_ => _.Key, _ => _.Value),
                             Jobs = jobs.Where(_ => _ != job).ToArray(),
-                            Executions = jobExecutions + new WorkJobExecutionInfo { Name = job.Name, Location = location, DurationInMs = job.DurationInMs, Slot = number, Job = job }
+                            Executions = jobExecutions + new WorkJobExecutionInfo(job.Name, job, location, number) { DurationInMs = job.DurationInMs }
                         },
                         callbackFound);
                 }

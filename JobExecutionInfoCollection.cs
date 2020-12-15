@@ -11,8 +11,8 @@
     {
         internal readonly DataHolder data;
         internal readonly WorkJobExecutionInfo[] jobs;
-        internal LinkJobExecutionInfo[] linkJobs;
-        internal JobExecutionInfo[] allJobs;
+        internal LinkJobExecutionInfo[]? linkJobs;
+        internal JobExecutionInfo[]? allJobs;
 
         public JobExecutionInfoCollection(DataHolder data)
             : this(data, new WorkJobExecutionInfo[] { })
@@ -54,6 +54,7 @@
                     if (from != to)
                     {
                         var aLink = data.AllLinks.FirstOrDefault(_ => _.From == from && _.To == to);
+                        if (aLink == null) throw new Exception("dependence unmet");
                         var thisLinkFinishTime = 0;
                         foreach (var link in aLink.Links)
                         {
@@ -63,14 +64,10 @@
                                 .FirstOrDefault();
                             var start = Math.Max(thisLinkFinishTime, Math.Max(avail, exist == null ? 0 : exist.StartInMs + exist.DurationInMs));
                             var duration = (int)Math.Ceiling(dep.Size * 1000d / link.Bandwidth);
-                            linkJobs.Add(new LinkJobExecutionInfo
+                            linkJobs.Add(new LinkJobExecutionInfo(flow, dep.Depend, link.From, link.To)
                             {
-                                Name = flow,
                                 DurationInMs = duration,
                                 StartInMs = start,
-                                Partition = dep.Depend,
-                                From = link.From,
-                                To = link.To,
                             });
                             thisLinkFinishTime = start + duration;
                             parts.Add((link.To, thisLinkFinishTime));
@@ -85,13 +82,9 @@
                     }
                 }
 
-                workJobs.Add(new WorkJobExecutionInfo
+                workJobs.Add(new WorkJobExecutionInfo(job.Name, job.Job, job.Location, job.Slot)
                 {
-                    Job = job.Job,
-                    Name = job.Name,
                     DurationInMs = job.DurationInMs,
-                    Location = job.Location,
-                    Slot = job.Slot,
                     StartInMs = depFinishTime,
                 });
 
@@ -110,9 +103,10 @@
             .OrderByDescending(_ => _)
             .First();
 
-        public override string ToString()
+        public override string? ToString()
         {
-            var strJobs = allJobs
+            if (this.allJobs == null) return base.ToString();
+            var strJobs = this.allJobs
                 .OrderBy(_ => _.StartInMs)
                 .Select(_ => getName(_)
                     + $" ({_.StartInMs}, {_.DurationInMs})")
