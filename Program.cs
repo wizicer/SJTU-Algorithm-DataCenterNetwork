@@ -1,5 +1,6 @@
 ﻿namespace NetworkAlgorithm
 {
+    using NetworkAlgorithm.Visualizer;
     using System;
     using System.IO;
     using System.Linq;
@@ -12,12 +13,12 @@
             //var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SimpleData"));
             var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ToyData"));
 
-            Visualizer.VisualizeRelationship(dh, "datacenters.png");
-            Visualizer.VisualizeTask(dh, "task.png");
+            dh.VisualizeRelationship("datacenters.png");
+            dh.VisualizeTask("task.png");
 
             var alloc = new Allocator();
             var colList = alloc.Allocate(dh);
-            Visualizer.VisualizeTiming(colList.Last(), "timing.png");
+            colList.Last().VisualizeTiming("timing.png");
         }
     }
 }

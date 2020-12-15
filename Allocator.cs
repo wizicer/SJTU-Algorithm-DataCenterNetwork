@@ -1,5 +1,6 @@
 ﻿namespace NetworkAlgorithm
 {
+    using NetworkAlgorithm.Visualizer;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -30,7 +31,7 @@
                     best = result.Time;
                     list.Clear();
                     Console.WriteLine(result.ToString());
-                    Visualizer.VisualizeTiming(result, "timingBest.png");
+                    result.VisualizeTiming("timingBest.png");
                 }
 
                 if (result.Time == best)
@@ -40,7 +41,7 @@
 
                 if ((DateTime.Now - dt).TotalSeconds > 5)
                 {
-                    Visualizer.VisualizeTiming(result, "timing.png");
+                    result.VisualizeTiming("timing.png");
                     dt = DateTime.Now;
                 }
             });
