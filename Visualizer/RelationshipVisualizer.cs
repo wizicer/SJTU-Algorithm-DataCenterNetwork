@@ -53,7 +53,7 @@ subgraph cluster_{{NAME}} {
 ";
             return template
                 .Replace("{{NAME}}", name)
-                .Replace("{{NODES}}", string.Join(Environment.NewLine, nodes.Select(_ => _.ToString()), 2).Indent());
+                .Replace("{{NODES}}", string.Join(Environment.NewLine, nodes.Select(_ => _.ToString())).Indent());
         }
 
         public record GraphNode(string Name, string Label, GraphShape Shape)
