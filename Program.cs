@@ -13,8 +13,8 @@
             //var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SimpleData"));
             var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ToyData"));
 
-            dh.VisualizeRelationship("datacenters.png");
-            dh.VisualizeTask("task.png");
+            dh.VisualizeRelationship("datacenters.pdf");
+            dh.VisualizeTask("task.pdf");
 
             var alloc = new Allocator();
             var colList = alloc.Allocate(dh);

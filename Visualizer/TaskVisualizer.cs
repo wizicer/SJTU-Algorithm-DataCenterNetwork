@@ -29,7 +29,7 @@
                 .Replace("{{CONNECTION}}", jobSb.Indent());
 
             File.WriteAllText("temptask.dot", outputText);
-            Process.Start("dot", $" -Tpng temptask.dot -o {output}");
+            Process.Start("dot", $" -T{output.GetFormat()} temptask.dot -o {output}");
         }
     }
 }

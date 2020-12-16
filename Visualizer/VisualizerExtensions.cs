@@ -1,6 +1,7 @@
 ﻿namespace NetworkAlgorithm.Visualizer
 {
     using System;
+    using System.IO;
     using System.Text;
 
     public static class VisualizerExtensions
@@ -23,5 +24,7 @@
         internal static string Indent(this StringBuilder input, int indent = 2) => input.ToString().Indent(indent);
         internal static string SetFont(this string content, string? color)
             => $"<font{(color == null ? "" : $" color={color}")}>{content}</font>";
+        internal static string GetFormat(this string filename)
+            => Path.GetExtension(filename).TrimStart('.');
     }
 }

@@ -36,7 +36,7 @@
                 .Replace("{{CONNECTION}}", linkSb.Indent());
 
             File.WriteAllText("temprelation.dot", outputText);
-            Process.Start("dot", $" -Tpng temprelation.dot -o {output}");
+            Process.Start("dot", $" -T{output.GetFormat()} temprelation.dot -o {output}");
         }
 
         private static string Cluster(string name, GraphNode[] nodes)
