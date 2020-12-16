@@ -26,5 +26,7 @@
             => $"<font{(color == null ? "" : $" color={color}")}>{content}</font>";
         internal static string GetFormat(this string filename)
             => Path.GetExtension(filename).TrimStart('.');
+        internal static string Suffix(this string filename, string suffix)
+            => $"{Path.GetFileNameWithoutExtension(filename)}-{suffix}{Path.GetExtension(filename)}";
     }
 }
