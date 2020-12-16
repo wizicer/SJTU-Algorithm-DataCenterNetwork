@@ -26,7 +26,8 @@ scale {{SCALE}} as 100 pixels
 
             File.WriteAllText("temp.uml", outputText);
             //Process.Start("java", $" -jar plantuml.jar temp.uml");
-            Process.Start(@"C:\DevTools\jrex86\bin\java.exe", $@" -jar C:\Tools\jar\plantuml.jar temp.uml");
+            var format = Path.GetExtension(output).TrimStart('.');
+            Process.Start(@"C:\DevTools\jrex86\bin\java.exe", $@" -jar C:\Tools\jar\plantuml.jar -t{format} temp.uml");
         }
 
         private static string SimplifyLink(string name) => name.Replace(" -> ", "_");

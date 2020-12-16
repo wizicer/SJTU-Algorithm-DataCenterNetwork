@@ -31,7 +31,7 @@
                     best = result.Time;
                     list.Clear();
                     Console.WriteLine(result.ToString());
-                    result.VisualizeTiming("timingBest.png");
+                    result.VisualizeTiming("timingBest.eps");
                 }
 
                 if (result.Time == best)
@@ -41,7 +41,7 @@
 
                 if ((DateTime.Now - dt).TotalSeconds > 5)
                 {
-                    result.VisualizeTiming("timing.png");
+                    result.VisualizeTiming("timing.eps");
                     dt = DateTime.Now;
                 }
             });

@@ -18,7 +18,7 @@
 
             var alloc = new Allocator();
             var colList = alloc.Allocate(dh);
-            colList.Last().VisualizeTiming("timing.png");
+            colList.Last().VisualizeTiming("timing.eps");
         }
     }
 }
