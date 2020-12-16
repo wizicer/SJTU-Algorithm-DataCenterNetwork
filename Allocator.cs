@@ -6,13 +6,12 @@
     using System.Linq;
     using static NetworkAlgorithm.DataHolder;
 
-    public class Allocator
+    public static class Allocator
     {
-        public Allocator()
-        {
-        }
-
-        public FinalExecutionInfoCollection[] Allocate(DataHolder data)
+        public static FinalExecutionInfoCollection[] Allocate(
+            this DataHolder data,
+            string bestResultOutput,
+            string latestResultOutput)
         {
             var ps = data.Partitions.ToDictionary(_ => _.Partition, _ => _.DataCenter);
             var slots = data.Slots.SelectMany(_ => Enumerable.Range(0, _.Slot).Select(o => (_.DataCenter, o))).ToArray();
@@ -23,26 +22,26 @@
             var list = new List<FinalExecutionInfoCollection>();
             var best = int.MaxValue;
             var dt = DateTime.Now;
-            dfs(new AttemptInfo(ps, slots, links, jobs, new JobExecutionInfoCollection(data)), col =>
+            Dfs(new AttemptInfo(ps, slots, links, jobs, new JobExecutionInfoCollection(data)), col =>
             {
                 var result = col.Calculate();
                 if (result.Time < best)
                 {
                     best = result.Time;
                     list.Clear();
-                    Console.WriteLine(result.ToString());
-                    result.VisualizeTiming("timingBest.eps");
+                    Console.WriteLine("Best Result Found: " + result.ToString());
+                    result.VisualizeTiming(bestResultOutput);
                 }
 
                 if (result.Time == best)
                 {
                     list.Add(result);
-                }
 
-                if ((DateTime.Now - dt).TotalSeconds > 5)
-                {
-                    result.VisualizeTiming("timing.eps");
-                    dt = DateTime.Now;
+                    if ((DateTime.Now - dt).TotalSeconds > 5)
+                    {
+                        result.VisualizeTiming(latestResultOutput);
+                        dt = DateTime.Now;
+                    }
                 }
             });
 
@@ -54,7 +53,7 @@
             return list.ToArray();
         }
 
-        private void dfs(
+        private static void Dfs(
             AttemptInfo info,
             Action<JobExecutionInfoCollection> callbackFound)
         {
@@ -72,10 +71,10 @@
                 // check partition dependence
                 if (!job.Dependences.All(dep => ps.ContainsKey(dep.Depend))) continue;
 
-                var hslots = heuristic(job, info);
+                var hslots = Heuristic(job, info);
                 foreach (var (location, number) in hslots)
                 {
-                    dfs(
+                    Dfs(
                         info with
                         {
                             PartitionDc = ps.Concat(new[] { new KeyValuePair<string, DataCenter>(job.Name, new DataCenter(location)) }).ToDictionary(_ => _.Key, _ => _.Value),
@@ -87,7 +86,7 @@
             }
         }
 
-        private IEnumerable<(DataCenter location, int number)> heuristic(
+        private static IEnumerable<(DataCenter location, int number)> Heuristic(
             JobInfo job,
             AttemptInfo info)
         {

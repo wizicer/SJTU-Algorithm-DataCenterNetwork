@@ -9,16 +9,22 @@
     {
         static void Main(string[] args)
         {
-            //var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Level2SimpleData"));
-            //var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SimpleData"));
-            var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ToyData"));
+            var folders = new[] {
+                "SimpleData",
+                "Level2SimpleData",
+                "ToyData",
+            };
 
-            dh.VisualizeRelationship("datacenters.pdf");
-            dh.VisualizeTask("task.pdf");
+            foreach (var folder in folders)
+            {
+                var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, folder));
 
-            var alloc = new Allocator();
-            var colList = alloc.Allocate(dh);
-            colList.Last().VisualizeTiming("timing.eps");
+                dh.VisualizeRelationship(Prefix("datacenters.pdf"));
+                dh.VisualizeTask(Prefix("task.pdf"));
+                _ = dh.Allocate(Prefix("timingBest.eps"), Prefix("timing.eps"));
+
+                string Prefix(string filename) => $"{folder}-{filename}";
+            }
         }
     }
 }
