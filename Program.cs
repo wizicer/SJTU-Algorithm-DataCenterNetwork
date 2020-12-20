@@ -19,9 +19,9 @@
             {
                 var dh = new DataHolder(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, folder));
 
-                dh.VisualizeRelationship(Prefix("datacenters.pdf"));
-                dh.VisualizeTask(Prefix("task.pdf"));
-                _ = dh.Allocate(Prefix("timingBest.eps"), Prefix("timing.eps"));
+                dh.VisualizeRelationship(Prefix("datacenters.png"));
+                dh.VisualizeTask(Prefix("task.png"));
+                _ = dh.Allocate(Prefix("timingBest.png"), Prefix("timing.png"));
 
                 string Prefix(string filename) => $"{folder}-{filename}";
             }
