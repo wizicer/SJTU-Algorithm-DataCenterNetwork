@@ -1,0 +1,160 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[ruled,linesnumbered,boxed]{algorithm2e}
+\usepackage{amsmath}
+\usepackage{tabularx}
+\usepackage[colorlinks, linkcolor=blue, anchorcolor=blue, citecolor=green]{hyperref}
+\usepackage[table]{xcolor}
+\usepackage{subfig}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{layout}
+%\usepackage{ctex}
+
+%\footskip = 10pt
+\pagestyle{fancy}
+\chead{Group Project}
+\lhead{CS7310-Algorithm@SJTU}
+\rhead{Instructor: Xiaofeng Gao}
+\rfoot{}
+\cfoot{Page \thepage \ of \pageref{LastPage}}
+\addtolength{\headheight}{0.5\baselineskip}
+\addtolength{\headwidth}{0\marginparsep}
+\addtolength{\headwidth}{0\marginparwidth}
+
+
+
+\title{Scheduling Jobs across Geo-Distributed Data Centers}
+
+\begin{document}
+
+%\linespread{0.85}
+
+The entrypoint of algorithm is \textbf{dfs-solution}. Utilize it to find optimal solutions,
+and find guaranteed feasible solutions if scaled too much.
+
+\begin{minipage}[t]{1\textwidth}
+	\begin{algorithm}[H] \label{Alg_dfs}
+		\KwIn{
+			Jobs $J = [j_1, j_2, \cdots, j_n]$,
+			Available Partitions $P$,
+			Execution Plan $E$ includes a series of jobs.}
+		\KwOut{Feasible solutions $S$}
+		\caption{dfs-solution}
+		\BlankLine
+
+		\textbf{\underline{Found Solution}}
+
+		$t_q = +\infty$
+		\tcc*{Total quickest finished jobs series}
+
+
+		\If{$J = \varnothing$}{
+			$t \leftarrow CalculateTime(E)$
+
+			\If {$t < t_q$}{
+				$S = \varnothing$
+
+				$t_q \leftarrow t$
+			}
+			\If {$t = t_q$}{
+				$S \overset{+}{\leftarrow} E$
+			}
+		}
+
+		\BlankLine
+		\textbf{\underline{Searching}}
+
+		\For{$j_i$ in $J$}{
+			\If {$dependences[j_i] \in P$} {
+				$L = Heuristic(j_i, P, E)$
+				\tcc*{Ordered slots for job to be executed}
+
+				\For{$l_k$ in $L$}{
+					dfs-solution($P+j_i$, $J-j_i$, $E+e_{j_i,l_k}$) 
+				}
+			}
+		}
+	\end{algorithm}
+\end{minipage}
+
+
+\begin{minipage}[t]{1\textwidth}
+	\begin{algorithm}[H] \label{Alg_heuristic}
+		\KwIn{
+			All available slots $L = [l_1, l_2, \cdots, l_m]$ in each datacenter(one for each),
+			Job $j$,
+			Available Partitions $P$,
+			Execution Plan $E$ includes a series of jobs.}
+		\KwOut{Ordered slots $L^\star$}
+		\caption{Heuristic}
+		\BlankLine
+
+		\For{$l_k$ in $L$}{
+			$m \leftarrow [\text{data center contains same main job} , \text{data center contains main job partitions}]$
+
+			$w_k=
+				\begin{cases}
+					3 & \text{if } m = [true, true]\\
+					2 & \text{if } m = [true, false]\\
+					1 & \text{if } m = [false, false]\\
+					0 & \text{else}\\
+				\end{cases}
+			$
+		}
+
+		$L^\star \leftarrow SORT(L, W)$
+		\tcc*{Sort slots by weight $W = [w_1, \cdots, w_m]$}
+
+		\Return{$L^\star$}
+	\end{algorithm}
+\end{minipage}
+
+
+\begin{minipage}[t]{1\textwidth}
+	\begin{algorithm}[H] \label{Alg_calctime}
+		\KwIn{
+			Jobs $J = [j_1, j_2, \cdots, j_n]$,
+			Available Partitions $P$,
+			Execution Plan $E \in J$ includes a series of jobs.}
+		\KwOut{Time $t$}
+		\caption{CalculateTime}
+		\BlankLine
+
+		$R_f \leftarrow \varnothing$
+
+		\For{$j_i$ in $J$}{
+			$td_{i} \leftarrow 0$
+
+			\For {$d_{j_i,k}$ in $dependences[j_i]$} {
+				\If{$DC[d_{j_i,k}] \neq DC[j_i]$}{
+					$LINKS \leftarrow ShortestPath(DC[d_{j_i,k}], DC[j_i])$
+
+					$td_{i} \leftarrow \sum_{l_h \in LINKS} Time[l_h]$
+				}
+			}
+
+			$avail[j_i] \overset{+}{\leftarrow} td_i+duration[j_i]$
+			
+			$R_f \overset{+}{\leftarrow} avail[j_i]$
+		}
+
+		$t \leftarrow \max_{r_{f,i} \in R_f} r_{f,i}$
+
+		\Return{$L^\star$}
+	\end{algorithm}
+\end{minipage}
+
+\textbf{Optimal Solution. } If we want to find the optimal solution,
+and let the \textbf{dfs} algorithm finish all possibilities,
+the complexity is $O(n!m!)$,
+which $n$ is number of jobs, $m$ is total slot number of all datacenters.
+
+\par
+\textbf{Approximation Solution. } If we just want to find the approximation solution,
+which guaranteed at least feasible,
+the complexity is $O(nm + m \log m)$,
+which $n$ is number of jobs, $m$ is total slot number of all datacenters.
+
+\end{document}
